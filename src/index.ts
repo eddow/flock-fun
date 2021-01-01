@@ -2,14 +2,14 @@ import * as Physics from 'physicsjs'
 import Flock from './entities/flock'
 import Baits from './entities/baits'
 
-const viewWidth = 600;
-const viewHeight = 600;
+const viewWidth = 900;
+const viewHeight = 900;
 const renderer = Physics.renderer('canvas', {
     el: 'scene',
     width: viewWidth,
     height: viewHeight,
 	autoResize: false,
-    meta: true, // don't display meta data
+    meta: false
 });
 
 Physics(function(world) {
@@ -58,6 +58,7 @@ Physics(function(world) {
 			else { bF = c.bodyB; bB = c.bodyA; }
 			if('fish'=== bF.name && 'bait'=== bB.name) {
 				//bF.something
+				// TODO: instead: decay(K*data.overlap) ?
 				baits.remove(bB);
 			}
 		}

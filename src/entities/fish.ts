@@ -6,7 +6,7 @@ const angleVelMax = .02;
 const pi = Math.PI;
 const flapCoolDown = 5;
 const maxVFlap = .1;	// Cannot flap if already faster than this
-const hunger = .7;	// How much it prefers the bait to the group : 0..1
+const hunger = .1;	// How much it prefers the bait to the group : 0..1
 
 Physics.body('fish', 'circle', function(parent) {
 	return {

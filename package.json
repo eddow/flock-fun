@@ -1,8 +1,8 @@
 {
-  "name": "herd",
+  "name": "flock-fun",
   "version": "1.0.0",
-  "description": "herd game test",
-  "main": "index.js",
+  "description": "Some fun with flocks",
+  "main": "dist/index.html",
   "scripts": {
     "build": "webpack",
     "start": "webpack --watch"
