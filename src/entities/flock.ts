@@ -4,7 +4,7 @@ import './fish'
 export default class Flock {
 	fish: any[]
 	behavior: any
-	constructor(world: any, number: number, nearest: number, opts: (i: number)=> any) {
+	constructor(world: any, number: number, nearest: number, comfortDistance: number, opts: (i: number)=> any) {
 		console.assert(nearest < number, 'Comparison neighbours less than number-1')
 		this.fish = [];
 		for(let i=0; i<number; ++i) {
@@ -13,7 +13,8 @@ export default class Flock {
 			world.add(fish);
 		}
 		world.add(this.behavior = Physics.behavior('flock', {
-			nearest
+			nearest,
+			comfortDistance
 		}).applyTo(this.fish));
 	}
 }
@@ -32,15 +33,12 @@ function findSortIndex(nrs: number[], ins: number) {
 
 Physics.behavior('flock', function(parent) {
     return {
-        // extended
-        init: function(options) {
-            parent.init.call(this, options);
-        },
-
         behave: function(data) {
             var bodies = this.getTargets(),
 				nearest = this.options.nearest,
-				neighbours = new Array(nearest);
+				neighbours = new Array(nearest),
+				cd = this.options.comfortDistance;
+			cd = cd * cd;	// we use squared distance
 			
             for(let fish of bodies) {
 				neighbours.fill({
@@ -56,7 +54,7 @@ Physics.behavior('flock', function(parent) {
 						neighbours = neighbours.slice(0, nearest);
 					}
 				}
-				fish.turn(neighbours);
+				fish.turn(neighbours, cd, data.dt);
             }
         }
     };

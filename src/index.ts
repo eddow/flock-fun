@@ -1,5 +1,6 @@
 import * as Physics from 'physicsjs'
 import Flock from './entities/flock'
+import Baits from './entities/baits'
 
 const viewWidth = 600;
 const viewHeight = 600;
@@ -9,32 +10,22 @@ const renderer = Physics.renderer('canvas', {
     height: viewHeight,
 	autoResize: false,
     meta: true, // don't display meta data
-    styles: {
-        // set colors for the circle bodies
-        'circle' : {
-            strokeStyle: 'hsla(60, 37%, 17%, 1)',
-            lineWidth: 1,
-            fillStyle: 'hsla(60, 37%, 57%, 0.8)',
-            angleIndicator: 'hsla(60, 37%, 17%, 0.4)'
-        }
-    }
 });
 
-
 Physics(function(world) {
-	new Flock(world, 5, 2, ()=> ({
-		x: Math.random() * viewWidth,
-		y: Math.random() * viewHeight,
-		angle: Math.random() * Math.PI * 2,
-		radius: 10,
-		comfortDistance: 1600		// Where does this fish feel comfortable distant(sq) from others
-	}));
-	
-	var gravity = Physics.behavior('constant-acceleration', {
-		acc: { x : 0, y: 0.0004 } // this is the default
-	});
-	//world.add(gravity);
-	gravity.setAcceleration({ x: 0, y: 0.0004 });
+	const baits = new Baits(world);
+	const flock = new Flock(
+		world,
+		50,	// nr of fish
+		5,
+		30, // Where does this fish feel comfortable distant(sq) from others
+		()=> ({
+			x: Math.random() * viewWidth,
+			y: Math.random() * viewHeight,
+			angle: Math.random() * Math.PI * 2,
+			radius: 5,
+			visibility: 100
+		}));
 
 	var viewportBounds = Physics.aabb(0, 0, viewWidth, viewHeight);
 	world.add(Physics.behavior('edge-collision-detection', {
@@ -50,7 +41,11 @@ Physics(function(world) {
 		world.render();
 	});
 
-	Physics.util.ticker.on(function(time){
+	world.add(Physics.behavior('interactive', {el: 'scene'}));
+	world.on('interact:poke', function(data){
+		baits.add(data.x, data.y);
+	});
+	Physics.util.ticker.on(function(time) {
 		world.step(time);
 	});
 	// start the ticker
