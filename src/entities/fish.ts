@@ -6,6 +6,7 @@ const angleVelMax = .02;
 const pi = Math.PI;
 const flapCoolDown = 5;
 const maxVFlap = .1;	// Cannot flap if already faster than this
+const hunger = .7;	// How much it prefers the bait to the group : 0..1
 
 Physics.body('fish', 'circle', function(parent) {
 	return {
@@ -19,7 +20,7 @@ Physics.body('fish', 'circle', function(parent) {
 			parent.init.call(this, options);
 			this.fcd = 0;
 		},
-		turn: function(neighbours: any[], comfortDistance, dt) {
+		turn: function(neighbours: any[], comfortDistance, bait: any, dt) {
 			var scratch = Physics.scratchpad();
 			try {
 				let pos = this.state.pos,
@@ -69,18 +70,28 @@ Physics.body('fish', 'circle', function(parent) {
 						);
 					this.fcd -= maxTurn-delta;
 					tangle += Math.sign(angle-tangle) * delta;
-					this.state.angular.pos = tangle;
 					let rotate = scratch.transform();
 					rotate.setRotation(tangle);
 					temp.set(Math.max(norm, velMax), 0);
 					temp.transform(rotate);
 				}
+				if(bait && bait.state.pos.distSq(this.state.pos) < vradius) {
+					distance.clone(bait.state.pos);
+					distance.vsub(this.state.pos);
+					distance.normalize();
+					distance.mult(velMax*hunger);
+					temp.mult(1-hunger);
+					temp.vadd(distance);
+				}
+				this.state.angular.pos = temp.angle();
 				/*if(this.fcd <= 0 && this.state.vel.norm() < maxVFlap) {
 					this.fcd = flapCoolDown;
 					this.state.acc.clone(temp);
 				} else 
 					this.state.acc.zero();*/
 				this.state.vel.clone(temp);
+			}catch(x) {
+				console.error(x);
 			} finally {
 				scratch.done();
 			}

@@ -1,10 +1,17 @@
 import * as Physics from 'physicsjs'
 import './fish'
+import Baits from './baits'
 
 export default class Flock {
 	fish: any[]
 	behavior: any
-	constructor(world: any, number: number, nearest: number, comfortDistance: number, opts: (i: number)=> any) {
+	constructor(world: any,
+		number: number,
+		nearest: number,
+		comfortDistance: number,
+		baits: Baits,
+		opts: (i: number)=> any
+	) {
 		console.assert(nearest < number, 'Comparison neighbours less than number-1')
 		this.fish = [];
 		for(let i=0; i<number; ++i) {
@@ -14,6 +21,7 @@ export default class Flock {
 		}
 		world.add(this.behavior = Physics.behavior('flock', {
 			nearest,
+			baits,
 			comfortDistance
 		}).applyTo(this.fish));
 	}
@@ -33,6 +41,10 @@ function findSortIndex(nrs: number[], ins: number) {
 
 Physics.behavior('flock', function(parent) {
     return {
+		/*init: function(options){
+			parent.init.call(this, options);
+			this.baits = option.baits;
+		},*/
         behave: function(data) {
             var bodies = this.getTargets(),
 				nearest = this.options.nearest,
@@ -54,7 +66,15 @@ Physics.behavior('flock', function(parent) {
 						neighbours = neighbours.slice(0, nearest);
 					}
 				}
-				fish.turn(neighbours, cd, data.dt);
+				let baitProx = Infinity, nearestBait = null;
+				for(let bait of this.options.baits.items) {
+					let dist = bait.state.pos.distSq(fish.state.pos);
+					if(dist < baitProx) {
+						baitProx = dist;
+						nearestBait = bait;
+					}
+				}
+				fish.turn(neighbours, cd, nearestBait, data.dt);
             }
         }
     };
