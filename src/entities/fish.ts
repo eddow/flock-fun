@@ -22,6 +22,7 @@ Physics.body('fish', 'circle', function(parent) {
 					vradius = this.visibility * this.visibility,
 					distance = scratch.vector().zero(),
 					immitate = scratch.vector().zero();
+				console.assert(!isNaN(pos.x) && !isNaN(pos.y));
 				for(let n of neighbours) {
 					if(n.dist < comfortDistance) {
 						temp.clone(pos); temp.vsub(n.fish.state.pos);
@@ -76,18 +77,21 @@ Physics.body('fish', 'circle', function(parent) {
 					temp.mult(1-hunger);
 					temp.vadd(distance);
 				}
-				let newAngle = temp.angle();
-				this.fcd -= Math.abs(this.state.angular.pos - newAngle);
-				this.state.angular.pos = newAngle;
-				/*let tvel = this.state.vel.norm();
-				if((this.fcd <= 0 && tvel < maxVFlap) || !tvel){
-					this.fcd = flapCoolDown;
-					this.state.acc.clone(temp);
-				} else 
-					this.state.acc.zero();
-				this.state.vel.mult(dt/10);*/
-				this.state.vel.clone(temp);
-			}catch(x) {
+				if(temp.normSq()) {
+					let newAngle = temp.angle();
+					this.fcd -= Math.abs(this.state.angular.pos - newAngle);
+					this.state.angular.pos = newAngle;
+					/*let tvel = this.state.vel.norm();
+					if((this.fcd <= 0 && tvel < maxVFlap) || !tvel){
+						this.fcd = flapCoolDown;
+						this.state.acc.clone(temp);
+					} else 
+						this.state.acc.zero();
+					this.state.vel.mult(dt/10);*/
+					console.assert(!isNaN(temp.x) && !isNaN(temp.y));
+					this.state.vel.clone(temp);
+				}
+			} catch(x) {
 				console.error(x);
 			} finally {
 				scratch.done();

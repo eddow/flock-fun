@@ -42,6 +42,7 @@ export default class Baits {
 			}
 			else {
 				// Note: no way to change the radius this way - TODO: find a way
+				// cfr renderer,js:156 view = body.view || ( body.view = this.createView(body.geometry, body.styles) );
 				// ? Physics.body('compound', ...
 				let rad = baitRadius * bait.life/lifeSpan;
 				bait.geometry.options({radius: rad});

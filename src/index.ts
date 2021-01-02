@@ -1,6 +1,9 @@
 import * as Physics from 'physicsjs'
 import Flock from './entities/flock'
 import Baits from './entities/baits'
+import Current from './stage/current'
+import Source from './stage/source'
+import Well from './stage/well'
 
 const viewWidth = 900;
 const viewHeight = 900;
@@ -53,6 +56,9 @@ Physics(function(world) {
 			visibility: 150
 		}));
 
+	Current.add(new Source(Physics.vector(100, 100), 300, .5));
+	Current.add(new Well(Physics.vector(400, 400), 300, .5));
+
 	let ball = Physics.body('circle', {
 		x: 300, y: 300, radius: 50, mass: 50,
 		styles: {
@@ -73,18 +79,25 @@ Physics(function(world) {
 	world.add(Physics.behavior('sweep-prune'));
 	world.add(Physics.behavior('body-impulse-response'));
 
+	world.add(Physics.behavior('currents'));
+
 	world.on('collisions:detected', function(data) {
 		var c, bB, bF;
 		for (var i = 0, l = data.collisions.length; i < l; i++){
 			c = data.collisions[ i ];
-
-			if('fish'=== c.bodyA.name) { bF = c.bodyA; bB = c.bodyB; }
-			else { bF = c.bodyB; bB = c.bodyA; }
-			if('fish'=== bF.name && 'bait'=== bB.name) {
-				//bF.something
-				// TODO: instead: decay(K*data.overlap) ?
-				// TODO: Only eat your bait? (cf. counter-flock)
-				baits.remove(bB);
+			if('current-indicator'=== c.bodyA.name)
+				world.remove(c.bodyA);
+			else if('current-indicator'=== c.bodyB.name)
+				world.remove(c.bodyB);
+			else {
+				if('fish'=== c.bodyA.name) { bF = c.bodyA; bB = c.bodyB; }
+				else { bF = c.bodyB; bB = c.bodyA; }
+				if('fish'=== bF.name && 'bait'=== bB.name) {
+					//bF.something
+					// TODO: instead: decay(K*data.overlap) ?
+					// TODO: Only eat your bait? (cf. counter-flock)
+					baits.remove(bB);
+				}
 			}
 		}
 	});
