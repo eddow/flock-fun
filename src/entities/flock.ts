@@ -3,7 +3,7 @@ import './fish'
 import Baits from './baits'
 
 export default class Flock {
-	fish: any[]
+	items: any[]
 	behavior: any
 	constructor(world: any,
 		number: number,
@@ -13,17 +13,17 @@ export default class Flock {
 		opts: (i: number)=> any
 	) {
 		console.assert(nearest < number, 'Comparison neighbours less than number-1')
-		this.fish = [];
+		this.items = [];
 		for(let i=0; i<number; ++i) {
 			let fish = Physics.body('fish', opts(i));
-			this.fish.push(fish);
+			this.items.push(fish);
 			world.add(fish);
 		}
 		world.add(this.behavior = Physics.behavior('flock', {
 			nearest,
 			baits,
 			comfortDistance
-		}).applyTo(this.fish));
+		}).applyTo(this.items));
 	}
 }
 
@@ -67,11 +67,13 @@ Physics.behavior('flock', function(parent) {
 					}
 				}
 				let baitProx = Infinity, nearestBait = null;
-				for(let bait of this.options.baits.items) {
-					let dist = bait.state.pos.distSq(fish.state.pos);
-					if(dist < baitProx) {
-						baitProx = dist;
-						nearestBait = bait;
+				if(this.options.baits) {
+					for(let bait of this.options.baits.items) {
+						let dist = bait.state.pos.distSq(fish.state.pos);
+						if(dist < baitProx) {
+							baitProx = dist;
+							nearestBait = bait;
+						}
 					}
 				}
 				fish.turn(neighbours, cd, nearestBait, data.dt);

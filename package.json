@@ -7,6 +7,7 @@
     "build": "webpack",
     "start": "webpack --watch"
   },
+  "repository": "github:eddow/flock-fun.git",
   "author": "fmdm",
   "license": "ISC",
   "dependencies": {

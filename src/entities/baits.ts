@@ -12,6 +12,7 @@ Physics.body('bait', 'circle', function(parent) {
 				fillStyle: 'hsla(0, 37%, 57%, 0.8)',
 			};
 			options.radius = 3;
+    		options.treatment = 'dynamic';
 			parent.init.call(this, options);
 		}
 	};

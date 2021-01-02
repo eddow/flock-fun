@@ -11,16 +11,10 @@ const hunger = .1;	// How much it prefers the bait to the group : 0..1
 Physics.body('fish', 'circle', function(parent) {
 	return {
 		init: function(options){
-			options.styles = {
-				strokeStyle: 'hsla(60, 37%, 17%, 1)',
-				lineWidth: 1,
-				fillStyle: 'hsla(60, 37%, 57%, 0.8)',
-				angleIndicator: 'hsla(60, 37%, 17%, 0.4)'
-			};
 			parent.init.call(this, options);
 			this.fcd = 0;
 		},
-		turn: function(neighbours: any[], comfortDistance, bait: any, dt) {
+		turn: function(neighbours: any[], comfortDistance, bait: any, dt:number) {
 			var scratch = Physics.scratchpad();
 			try {
 				let pos = this.state.pos,
@@ -68,7 +62,6 @@ Physics.body('fish', 'circle', function(parent) {
 							Math.abs(angle-tangle),
 							maxTurn
 						);
-					this.fcd -= maxTurn-delta;
 					tangle += Math.sign(angle-tangle) * delta;
 					let rotate = scratch.transform();
 					rotate.setRotation(tangle);
@@ -83,12 +76,16 @@ Physics.body('fish', 'circle', function(parent) {
 					temp.mult(1-hunger);
 					temp.vadd(distance);
 				}
-				this.state.angular.pos = temp.angle();
-				/*if(this.fcd <= 0 && this.state.vel.norm() < maxVFlap) {
+				let newAngle = temp.angle();
+				this.fcd -= Math.abs(this.state.angular.pos - newAngle);
+				this.state.angular.pos = newAngle;
+				/*let tvel = this.state.vel.norm();
+				if((this.fcd <= 0 && tvel < maxVFlap) || !tvel){
 					this.fcd = flapCoolDown;
 					this.state.acc.clone(temp);
 				} else 
-					this.state.acc.zero();*/
+					this.state.acc.zero();
+				this.state.vel.mult(dt/10);*/
 				this.state.vel.clone(temp);
 			}catch(x) {
 				console.error(x);

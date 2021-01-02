@@ -17,7 +17,7 @@ Physics(function(world) {
 	const flock = new Flock(
 		world,
 		50,	// nr of fish
-		5,
+		6,
 		30, // Where does this fish feel comfortable distant(sq) from others
 		baits,
 		()=> ({
@@ -25,6 +25,31 @@ Physics(function(world) {
 			y: Math.random() * viewHeight,
 			angle: Math.random() * Math.PI * 2,
 			radius: 5,
+			styles: {
+				strokeStyle: 'hsla(60, 37%, 17%, 1)',
+				lineWidth: 1,
+				fillStyle: 'hsla(60, 37%, 57%, 0.8)',
+				angleIndicator: 'hsla(60, 37%, 17%, 0.4)'
+			},
+			visibility: 150
+		}));
+	const counterFlock = new Flock(
+		world,
+		20,	// nr of fish
+		6,
+		50, // Where does this fish feel comfortable distant(sq) from others
+		null,
+		()=> ({
+			x: Math.random() * viewWidth,
+			y: Math.random() * viewHeight,
+			angle: Math.random() * Math.PI * 2,
+			radius: 10,
+			styles: {
+				strokeStyle: 'hsla(0, 37%, 17%, 1)',
+				lineWidth: 1,
+				fillStyle: 'hsla(0, 37%, 57%, 0.8)',
+				angleIndicator: 'hsla(0, 37%, 17%, 0.4)'
+			},
 			visibility: 150
 		}));
 
@@ -36,7 +61,6 @@ Physics(function(world) {
 			fillStyle: 'hsla(140, 37%, 57%, 0.8)',
 		}
 	});
-	ball.cof = 0.5;
 	world.add(ball);
 
 	var viewportBounds = Physics.aabb(0, 0, viewWidth, viewHeight);
@@ -59,6 +83,7 @@ Physics(function(world) {
 			if('fish'=== bF.name && 'bait'=== bB.name) {
 				//bF.something
 				// TODO: instead: decay(K*data.overlap) ?
+				// TODO: Only eat your bait? (cf. counter-flock)
 				baits.remove(bB);
 			}
 		}
@@ -69,7 +94,8 @@ Physics(function(world) {
 		world.render();
 	});
 
-	world.add(Physics.behavior('interactive', {el: 'scene'}));
+	// `.applyTo([])` to avoid direct dragging of objects
+	world.add(Physics.behavior('interactive', {el: 'scene'}).applyTo([]));
 	world.on('interact:poke', function(data){
 		baits.add(data.x, data.y);
 	});
