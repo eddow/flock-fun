@@ -5,8 +5,8 @@ import Current from './stage/current'
 import Source from './stage/source'
 import Well from './stage/well'
 
-const viewWidth = 900;
-const viewHeight = 900;
+const viewWidth = 1000;
+const viewHeight = 700;
 const renderer = Physics.renderer('canvas', {
     el: 'scene',
     width: viewWidth,
@@ -20,14 +20,15 @@ Physics(function(world) {
 	const flock = new Flock(
 		world,
 		50,	// nr of fish
-		6,
-		30, // Where does this fish feel comfortable distant(sq) from others
+		6,	// nr of neighbours considered
+		30, // Where does this fish feel comfortable distant from others
 		baits,
 		()=> ({
 			x: Math.random() * viewWidth,
 			y: Math.random() * viewHeight,
 			angle: Math.random() * Math.PI * 2,
 			radius: 5,
+			velMax: .1,
 			styles: {
 				strokeStyle: 'hsla(60, 37%, 17%, 1)',
 				lineWidth: 1,
@@ -39,14 +40,15 @@ Physics(function(world) {
 	const counterFlock = new Flock(
 		world,
 		20,	// nr of fish
-		6,
-		50, // Where does this fish feel comfortable distant(sq) from others
+		6,	// nr of neighbours considered
+		50, // Where does this fish feel comfortable distant from others
 		null,
 		()=> ({
 			x: Math.random() * viewWidth,
 			y: Math.random() * viewHeight,
 			angle: Math.random() * Math.PI * 2,
 			radius: 10,
+			velMax: .15,
 			styles: {
 				strokeStyle: 'hsla(0, 37%, 17%, 1)',
 				lineWidth: 1,
@@ -103,17 +105,20 @@ Physics(function(world) {
 	});
 
 	world.add(renderer);
-	world.on('step', function(){
+	world.on('step', function() {
 		world.render();
 	});
 
 	// `.applyTo([])` to avoid direct dragging of objects
 	world.add(Physics.behavior('interactive', {el: 'scene'}).applyTo([]));
-	world.on('interact:poke', function(data){
+	world.on('interact:poke', function(data) {
 		baits.add(data.x, data.y);
 	});
+	/*world.on('beforeRender', function(data) {
+		baits.refreshViews();
+	});*/
 	var oldTime = 0;
-	Physics.util.ticker.on(function(time){
+	Physics.util.ticker.on(function(time) {
 		if(oldTime) {
 			var dt = time-oldTime;
 			baits.decay(dt);

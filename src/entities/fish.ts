@@ -1,7 +1,6 @@
 import * as Physics from 'physicsjs'
 
 const distFix = 1;
-const velMax = .1;
 const angleVelMax = .02;
 const pi = Math.PI;
 const flapCoolDown = 5;
@@ -18,6 +17,7 @@ Physics.body('fish', 'circle', function(parent) {
 			var scratch = Physics.scratchpad();
 			try {
 				let pos = this.state.pos,
+					velMax = this.velMax,
 					temp = scratch.vector(),
 					vradius = this.visibility * this.visibility,
 					distance = scratch.vector().zero(),

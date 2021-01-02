@@ -1,7 +1,7 @@
 import * as Physics from 'physicsjs'
 import Current from './current'
 
-const attenuation = 10;	// To avoid 1/~0 infinite strength
+const attenuation = 10;	// To avoid 1/~0 infinite strength when near the center
 
 export default class Source extends Current {
 	constructor(public position: Physics.vector, public radius: number, public strength: number) {

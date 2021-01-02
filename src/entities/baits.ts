@@ -42,7 +42,8 @@ export default class Baits {
 			}
 			else {
 				// Note: no way to change the radius this way - TODO: find a way
-				// cfr renderer,js:156 view = body.view || ( body.view = this.createView(body.geometry, body.styles) );
+				// cfr renderer.js:156 view = body.view || ( body.view = this.createView(body.geometry, body.styles) );
+				// ==> deleting the view makes it invisible, even if the view is re-created
 				// ? Physics.body('compound', ...
 				let rad = baitRadius * bait.life/lifeSpan;
 				bait.geometry.options({radius: rad});
@@ -50,9 +51,14 @@ export default class Baits {
 				bait.options({radius: rad});
 				bait.radius = rad;
 				document.title = ''+ rad;
-				bait.recalc();
+				bait.dirtyView = true;
 				i++;
 			}
 		}
-	}
+	}/*
+	refreshViews() {
+		for(let bait of this.items)
+			if(bait.dirtyView)
+				bait.view = null;
+	}*/
 }

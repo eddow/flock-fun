@@ -76,7 +76,7 @@ Physics.behavior('flock', function(parent) {
 						}
 					}
 				}
-				fish.turn(neighbours, cd, nearestBait, data.dt);
+				fish.turn(neighbours, cd, nearestBait, this.options.velMax, data.dt);
             }
         }
     };
