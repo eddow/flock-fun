@@ -1,8 +1,9 @@
 import {World} from 'matter-js'
+import {Scene} from './scene'
 import Flock from '../entities/flock'
 import Baits from '../entities/baits'
 
-export default class Scene {
+export default class EmptyScene implements Scene {
 	baits: Baits = null
 	flock: Flock = null
 	constructor(public world: World, viewWidth: number, viewHeight: number) {
@@ -29,7 +30,7 @@ export default class Scene {
 		this.flock.clear();
 		this.baits.clear();
 	}
-	click(x: number, y: number) {
+	click(x: number, y: number, button: number) {
 		this.baits.add(x, y);
 	}
 	collide(bA: any, bB: any) {
@@ -37,7 +38,7 @@ export default class Scene {
 		if('Fish'=== bA.label && 'Bait'=== bB.label)
 			this.baits.remove(bB);
 	}
-	tick(dt) {
+	tick(dt: number) {
 		this.baits.tick(dt);
 		this.flock.tick(dt);
 	}

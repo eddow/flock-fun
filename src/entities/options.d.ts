@@ -1,5 +1,5 @@
 import {World} from 'matter-js'
-import Baits from './baits'
+import Baits from '../entities/baits'
 
 export interface FishOptions {
 	x: number

@@ -1,5 +1,5 @@
 import {Engine, Render, World, Runner, Bodies, Events} from 'matter-js'
-//import './stage/current'
+import {Scene} from './scenes/scene'
 import EmptyScene from './scenes/empty'
 import TestScene from './scenes/test'
 
@@ -27,7 +27,7 @@ const viewWidth = 1536,
 		}
 	}),
 	engine = Engine.create({world}),
-	scene = new TestScene(world, viewWidth, viewHeight),
+	scene: Scene = new TestScene(world, viewWidth, viewHeight),
 	render = Render.create({
 		element: document.body,
 		engine: engine,
@@ -41,44 +41,18 @@ const viewWidth = 1536,
 const runner = Runner.create();
 
 World.add(engine.world, walls);
-/*
 
-Physics(function(world) {
-
-	world.add(Physics.behavior('body-collision-detection'));
-	world.add(Physics.behavior('sweep-prune'));
-	world.add(Physics.behavior('body-impulse-response'));
-
-	world.add(Physics.behavior('currents'));
-
-	world.on('collisions:detected', function(data) {
-		var c, bB, bF;
-		for (var i = 0, l = data.collisions.length; i < l; i++){
-			c = data.collisions[ i ];
-			if('current-indicator'=== c.bodyA.name)
-				world.remove(c.bodyA);
-			else if('current-indicator'=== c.bodyB.name)
-				world.remove(c.bodyB);
-			else
-				scene.collide(c.bodyA, c.bodyB);
-		}
-	});
-});*/
 Events.on(engine, 'collisionStart', function(event) {
 	for (var pair of event.pairs) {
-		/*if('current-indicator'=== c.bodyA.name)
-			world.remove(c.bodyA);
-		else if('current-indicator'=== c.bodyB.name)
-			world.remove(c.bodyB);
-		else*/
-			scene.collide(pair.bodyA, pair.bodyB);
+		scene.collide(pair.bodyA, pair.bodyB);
 	}
 });
-render.canvas.addEventListener('click', function(event) {
-		scene.click(
-			event.offsetX * viewWidth/render.canvas.clientWidth,
-			event.offsetY * viewHeight/render.canvas.clientHeight
-		);
+render.canvas.addEventListener('mouseup', function(event) {
+	scene.click(
+		event.offsetX * viewWidth/render.canvas.clientWidth,
+		event.offsetY * viewHeight/render.canvas.clientHeight,
+		event.button
+	);
 });
 Events.on(runner, 'tick', function(evt) {
 	scene.tick(evt.source.delta);

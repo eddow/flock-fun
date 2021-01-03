@@ -1,4 +1,5 @@
 import {World, Body, Bodies, Vector} from 'matter-js'
+import {Scene} from './scene'
 import Flock from '../entities/flock'
 import Baits from '../entities/baits'
 import Current from '../stage/current'
@@ -8,7 +9,7 @@ import Well from '../stage/well'
 const gap = 200;
 const wallWidth = 10;
 
-export default class Scene {
+export default class TestScene implements Scene {
 	baits: Baits = null
 	flock: Flock = null
 	counterFlock: Flock = null
@@ -71,7 +72,7 @@ export default class Scene {
 		this.source = new Source(world, Vector.create(100, 100), 300, .05);
 		this.well = new Well(world, Vector.create(400, 400), 300, .05);
 	}
-	clear(world) {
+	clear() {
 		this.flock.clear();
 		this.counterFlock.clear();
 		this.baits.clear();
@@ -80,10 +81,10 @@ export default class Scene {
 		this.source.clear();
 		this.well.clear();
 	}
-	click(x: number, y: number) {
+	click(x: number, y: number, button: number) {
 		this.baits.add(x, y);
 	}
-	collide(bA: Body, bB: Body) {
+	collide(bA: any, bB: any) {
 		if('Current indicator'=== bA.label)
 			bA.current.remove(bA);
 		else if('Current indicator'=== bB.label)
@@ -95,7 +96,7 @@ export default class Scene {
 				this.baits.remove(bB);
 		}
 	}
-	tick(dt) {
+	tick(dt: number) {
 		this.baits.tick(dt);
 		this.flock.tick(dt);
 		this.counterFlock.tick(dt);

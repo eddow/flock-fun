@@ -7,7 +7,7 @@ const angleVelMax = .05;
 const pi = Math.PI;
 const flapCoolDown = 5;
 const maxVFlap = .1;	// Cannot flap if already faster than this
-const hunger = .1;	// How much it prefers the bait to the group : 0..1
+const hunger = .1;	// How much fish prefer the bait to the group : 0..1
 
 export default function Fish(options: FishOptions, flock: FlockOptions) {
 	var rv = Bodies.trapezoid(options.x, options.y, flock.radius, flock.radius, .6, {
@@ -80,7 +80,7 @@ const fishPrototype = {
 			Object.assign(direction, {x: Math.cos(tangle)*norm, y: Math.sin(tangle)*norm});
 		}
 		if(bait) {
-			let baitStrength = hunger*bait.life / Baits.lifeSpan;
+			let baitStrength = /*bait.strength **/ hunger * bait.life/Baits.lifeSpan;
 			direction = Vector.add(
 				Vector.mult(
 					Vector.normalise(

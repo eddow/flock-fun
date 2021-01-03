@@ -1,7 +1,6 @@
 import {World, Vector, Body} from 'matter-js'
 import {FishOptions, FlockOptions} from './options'
 import Fish from './fish'
-//import Baits from './baits'
 
 export default class Flock {
 	items: Set<Body>

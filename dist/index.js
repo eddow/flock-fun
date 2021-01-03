@@ -11512,10 +11512,10 @@ var Baits = /** @class */ (function () {
     Baits.prototype.add = function (x, y) {
         var bait = matter_js_1.Bodies.circle(x, y, baitRadius, {
             label: 'Bait',
+            restitution: 1,
             render: {
                 fillStyle: this.color
-            },
-            isSensor: true
+            }
         });
         bait.life = lifeSpan;
         this.items.add(bait);
@@ -11585,7 +11585,7 @@ var angleVelMax = .05;
 var pi = Math.PI;
 var flapCoolDown = 5;
 var maxVFlap = .1; // Cannot flap if already faster than this
-var hunger = .1; // How much it prefers the bait to the group : 0..1
+var hunger = .1; // How much fish prefer the bait to the group : 0..1
 function Fish(options, flock) {
     var rv = matter_js_1.Bodies.trapezoid(options.x, options.y, flock.radius, flock.radius, .6, {
         restitution: 1,
@@ -11651,7 +11651,7 @@ var fishPrototype = {
             Object.assign(direction, { x: Math.cos(tangle) * norm, y: Math.sin(tangle) * norm });
         }
         if (bait) {
-            var baitStrength = hunger * bait.life / baits_1.default.lifeSpan;
+            var baitStrength = /*bait.strength **/ hunger * bait.life / baits_1.default.lifeSpan;
             direction = matter_js_1.Vector.add(matter_js_1.Vector.mult(matter_js_1.Vector.normalise(matter_js_1.Vector.sub(bait.position, this.position)), velMax * (bait.strength || 1) * baitStrength), matter_js_1.Vector.mult(direction, 1 - baitStrength));
         }
         if (matter_js_1.Vector.magnitudeSquared(direction)) {
@@ -11696,7 +11696,6 @@ var __values = (this && this.__values) || function(o) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 var matter_js_1 = __webpack_require__(/*! matter-js */ "../node_modules/matter-js/build/matter.js");
 var fish_1 = __webpack_require__(/*! ./fish */ "./entities/fish.ts");
-//import Baits from './baits'
 var Flock = /** @class */ (function () {
     function Flock(options, fishOptions) {
         this.options = options;
@@ -11849,39 +11848,11 @@ var viewWidth = 1536, viewHeight = 755, wallThick = 50, wallOptions = {
 });
 var runner = matter_js_1.Runner.create();
 matter_js_1.World.add(engine.world, walls);
-/*
-
-Physics(function(world) {
-
-    world.add(Physics.behavior('body-collision-detection'));
-    world.add(Physics.behavior('sweep-prune'));
-    world.add(Physics.behavior('body-impulse-response'));
-
-    world.add(Physics.behavior('currents'));
-
-    world.on('collisions:detected', function(data) {
-        var c, bB, bF;
-        for (var i = 0, l = data.collisions.length; i < l; i++){
-            c = data.collisions[ i ];
-            if('current-indicator'=== c.bodyA.name)
-                world.remove(c.bodyA);
-            else if('current-indicator'=== c.bodyB.name)
-                world.remove(c.bodyB);
-            else
-                scene.collide(c.bodyA, c.bodyB);
-        }
-    });
-});*/
 matter_js_1.Events.on(engine, 'collisionStart', function (event) {
     var e_1, _a;
     try {
         for (var _b = __values(event.pairs), _c = _b.next(); !_c.done; _c = _b.next()) {
             var pair = _c.value;
-            /*if('current-indicator'=== c.bodyA.name)
-                world.remove(c.bodyA);
-            else if('current-indicator'=== c.bodyB.name)
-                world.remove(c.bodyB);
-            else*/
             scene.collide(pair.bodyA, pair.bodyB);
         }
     }
@@ -11893,8 +11864,8 @@ matter_js_1.Events.on(engine, 'collisionStart', function (event) {
         finally { if (e_1) throw e_1.error; }
     }
 });
-render.canvas.addEventListener('click', function (event) {
-    scene.click(event.offsetX * viewWidth / render.canvas.clientWidth, event.offsetY * viewHeight / render.canvas.clientHeight);
+render.canvas.addEventListener('mouseup', function (event) {
+    scene.click(event.offsetX * viewWidth / render.canvas.clientWidth, event.offsetY * viewHeight / render.canvas.clientHeight, event.button);
 });
 matter_js_1.Events.on(runner, 'tick', function (evt) {
     scene.tick(evt.source.delta);
@@ -11937,8 +11908,8 @@ var source_1 = __webpack_require__(/*! ../stage/source */ "./stage/source.ts");
 var well_1 = __webpack_require__(/*! ../stage/well */ "./stage/well.ts");
 var gap = 200;
 var wallWidth = 10;
-var Scene = /** @class */ (function () {
-    function Scene(world, viewWidth, viewHeight) {
+var TestScene = /** @class */ (function () {
+    function TestScene(world, viewWidth, viewHeight) {
         this.world = world;
         this.baits = null;
         this.flock = null;
@@ -11997,7 +11968,7 @@ var Scene = /** @class */ (function () {
         this.source = new source_1.default(world, matter_js_1.Vector.create(100, 100), 300, .05);
         this.well = new well_1.default(world, matter_js_1.Vector.create(400, 400), 300, .05);
     }
-    Scene.prototype.clear = function (world) {
+    TestScene.prototype.clear = function () {
         this.flock.clear();
         this.counterFlock.clear();
         this.baits.clear();
@@ -12006,10 +11977,10 @@ var Scene = /** @class */ (function () {
         this.source.clear();
         this.well.clear();
     };
-    Scene.prototype.click = function (x, y) {
+    TestScene.prototype.click = function (x, y, button) {
         this.baits.add(x, y);
     };
-    Scene.prototype.collide = function (bA, bB) {
+    TestScene.prototype.collide = function (bA, bB) {
         var _a;
         if ('Current indicator' === bA.label)
             bA.current.remove(bA);
@@ -12023,16 +11994,16 @@ var Scene = /** @class */ (function () {
                 this.baits.remove(bB);
         }
     };
-    Scene.prototype.tick = function (dt) {
+    TestScene.prototype.tick = function (dt) {
         this.baits.tick(dt);
         this.flock.tick(dt);
         this.counterFlock.tick(dt);
         this.source.tick(dt);
         this.well.tick(dt);
     };
-    return Scene;
+    return TestScene;
 }());
-exports.default = Scene;
+exports.default = TestScene;
 ;
 
 

@@ -12,10 +12,10 @@ export default class Baits {
 	add(x: number, y: number) {
 		const bait = Bodies.circle(x, y, baitRadius, {
 			label: 'Bait',
+			restitution: 1,
 			render: {
 				fillStyle: this.color
-			},
-			isSensor: true
+			}
 		});
 		bait.life = lifeSpan;
 		this.items.add(bait);
