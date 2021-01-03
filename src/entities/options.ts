@@ -1,4 +1,5 @@
 import {World} from 'matter-js'
+import Baits from './baits'
 
 export interface FishOptions {
 	x: number
@@ -11,7 +12,7 @@ export interface FlockOptions {
 	number: number
 	neighbours: number
 	comfortDistance: number
-	baits: any//: Baits
+	baits?: Baits
 	radius: number
 	color: string
 	visibility: number

@@ -11607,7 +11607,10 @@ var fishPrototype = {
         var pos = this.position, velMax = this.flock.velocity, temp = matter_js_1.Vector.create(), vradius = this.visibility * this.visibility, direction = matter_js_1.Vector.create(), immitate = matter_js_1.Vector.create();
         console.assert(!isNaN(pos.x) && !isNaN(pos.y));
         if (!neighbours.length) {
-            // TODO: random seek
+            // TODO: better random seek
+            var angle = matter_js_1.Vector.angle({ x: 0, y: 0 }, this.velocity) +
+                (Math.random() - .5) * angleVelMax * 2;
+            Object.assign(direction, { x: Math.cos(angle) * velMax, y: Math.sin(angle) * velMax });
         }
         else
             try {
@@ -11817,9 +11820,7 @@ var __values = (this && this.__values) || function(o) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 var matter_js_1 = __webpack_require__(/*! matter-js */ "../node_modules/matter-js/build/matter.js");
-//import './stage/current'
-var empty_1 = __webpack_require__(/*! ./scenes/empty */ "./scenes/empty.ts");
-//import TestScene from './scenes/test'
+var test_1 = __webpack_require__(/*! ./scenes/test */ "./scenes/test.ts");
 // Estimation of ~16:9
 var viewWidth = 1536, viewHeight = 755, wallThick = 50, wallOptions = {
     isStatic: true,
@@ -11837,7 +11838,7 @@ var viewWidth = 1536, viewHeight = 755, wallThick = 50, wallOptions = {
         min: { x: 0, y: 0 },
         max: { x: viewWidth, y: viewHeight }
     }
-}), engine = matter_js_1.Engine.create({ world: world }), scene = new empty_1.default(world, viewWidth, viewHeight), render = matter_js_1.Render.create({
+}), engine = matter_js_1.Engine.create({ world: world }), scene = new test_1.default(world, viewWidth, viewHeight), render = matter_js_1.Render.create({
     element: document.body,
     engine: engine,
     options: {
@@ -11904,10 +11905,10 @@ matter_js_1.Render.run(render);
 
 /***/ }),
 
-/***/ "./scenes/empty.ts":
-/*!*************************!*\
-  !*** ./scenes/empty.ts ***!
-  \*************************/
+/***/ "./scenes/test.ts":
+/*!************************!*\
+  !*** ./scenes/test.ts ***!
+  \************************/
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -11929,13 +11930,21 @@ var __read = (this && this.__read) || function (o, n) {
     return ar;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+var matter_js_1 = __webpack_require__(/*! matter-js */ "../node_modules/matter-js/build/matter.js");
 var flock_1 = __webpack_require__(/*! ../entities/flock */ "./entities/flock.ts");
 var baits_1 = __webpack_require__(/*! ../entities/baits */ "./entities/baits.ts");
+var gap = 200;
+var wallWidth = 10;
 var Scene = /** @class */ (function () {
     function Scene(world, viewWidth, viewHeight) {
         this.world = world;
         this.baits = null;
         this.flock = null;
+        this.counterFlock = null;
+        this.source = null;
+        this.well = null;
+        this.ball = null;
+        this.wall = null;
         this.baits = new baits_1.default(world);
         this.flock = new flock_1.default({
             world: world,
@@ -11948,21 +11957,56 @@ var Scene = /** @class */ (function () {
             color: 'green',
             visibility: 200
         }, function () { return ({
-            x: Math.random() * viewWidth,
+            x: Math.random() * viewWidth - gap - wallWidth,
             y: Math.random() * viewHeight,
             angle: Math.random() * Math.PI * 2,
             restitution: 1
         }); });
+        this.counterFlock = new flock_1.default({
+            world: world,
+            number: 20,
+            neighbours: 6,
+            comfortDistance: 40,
+            radius: 20,
+            velocity: 3,
+            color: 'red',
+            visibility: 200
+        }, function () { return ({
+            x: Math.random() * viewWidth - gap - wallWidth,
+            y: Math.random() * viewHeight,
+            angle: Math.random() * Math.PI * 2,
+            restitution: 1
+        }); });
+        matter_js_1.World.add(world, this.ball = matter_js_1.Bodies.circle(300, 300, 50, {
+            render: {
+                fillStyle: 'blue'
+            },
+            label: 'Toy',
+            frictionAir: 0,
+            mass: 50
+        }));
+        matter_js_1.World.add(world, this.wall = matter_js_1.Bodies.rectangle(viewWidth - gap + wallWidth / 2, (viewHeight + gap) / 2, wallWidth, viewHeight - gap, {
+            render: {
+                fillStyle: 'grey'
+            },
+            label: 'Wall',
+            isStatic: true
+        }));
     }
-    Scene.prototype.clear = function () {
+    Scene.prototype.clear = function (world) {
         this.flock.clear();
+        this.counterFlock.clear();
         this.baits.clear();
+        matter_js_1.World.remove(this.world, this.ball);
+        matter_js_1.World.remove(this.world, this.wall);
+        //Current.clear(this.world);
     };
     Scene.prototype.click = function (x, y) {
         this.baits.add(x, y);
     };
     Scene.prototype.collide = function (bA, bB) {
         var _a;
+        // TODO: only flock eats bait, not counter-flock ?
         if ('Bait' === bA.label)
             _a = __read([bB, bA], 2), bA = _a[0], bB = _a[1];
         if ('Fish' === bA.label && 'Bait' === bB.label)
@@ -11971,6 +12015,7 @@ var Scene = /** @class */ (function () {
     Scene.prototype.tick = function (dt) {
         this.baits.tick(dt);
         this.flock.tick(dt);
+        this.counterFlock.tick(dt);
     };
     return Scene;
 }());

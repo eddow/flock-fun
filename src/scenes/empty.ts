@@ -1,4 +1,4 @@
-import {Engine, Render, World, Runner, Bodies, Events} from 'matter-js'
+import {World} from 'matter-js'
 import Flock from '../entities/flock'
 import Baits from '../entities/baits'
 
@@ -33,8 +33,7 @@ export default class Scene {
 		this.baits.add(x, y);
 	}
 	collide(bA: any, bB: any) {
-		if('Bait'=== bA.label)
-			[bA, bB] = [bB, bA];
+		if('Bait'=== bA.label) [bA, bB] = [bB, bA];
 		if('Fish'=== bA.label && 'Bait'=== bB.label)
 			this.baits.remove(bB);
 	}

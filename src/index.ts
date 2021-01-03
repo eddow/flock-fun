@@ -1,7 +1,7 @@
 import {Engine, Render, World, Runner, Bodies, Events} from 'matter-js'
 //import './stage/current'
 import EmptyScene from './scenes/empty'
-//import TestScene from './scenes/test'
+import TestScene from './scenes/test'
 
 // Estimation of ~16:9
 const viewWidth = 1536,
@@ -27,7 +27,7 @@ const viewWidth = 1536,
 		}
 	}),
 	engine = Engine.create({world}),
-	scene = new EmptyScene(world, viewWidth, viewHeight),
+	scene = new TestScene(world, viewWidth, viewHeight),
 	render = Render.create({
 		element: document.body,
 		engine: engine,
