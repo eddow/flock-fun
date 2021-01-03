@@ -1,47 +1,43 @@
-import * as Physics from 'physicsjs'
+import {World, Bodies, Body} from 'matter-js'
 
 const lifeSpan = 10;	//seconds
 const baitRadius = 4;
 
-Physics.body('bait', 'circle', function(parent) {
-	return {
-		init: function(options){
-			options.styles = {
-				strokeStyle: 'hsla(0, 37%, 17%, 1)',
-				lineWidth: 1,
-				fillStyle: 'hsla(0, 37%, 57%, 0.8)',
-			};
-			options.radius = 3;
-    		options.treatment = 'dynamic';
-			parent.init.call(this, options);
-		}
-	};
-});
-
 export default class Baits {
-	items: any[] = []
-	behavior: any
-	constructor(private world:any) {}
+	items: Body[]
+	static lifeSpan: number = lifeSpan
+	constructor(public world:any, public color: string = 'orange') {
+		this.items = [];
+	}
 	add(x: number, y: number) {
-		let bait = Physics.body('bait', {x, y, life: lifeSpan});
+		const bait = Bodies.circle(x, y, baitRadius, {
+			label: 'Bait',
+			render: {
+				fillStyle: this.color
+			},
+			isSensor: true
+		});
+		bait.life = lifeSpan;
 		this.items.push(bait);
-		this.world.add(bait);
+		World.add(this.world, bait);
 	}
 	remove(bait: any) {
 		let ndx = this.items.indexOf(bait);
-		this.world.remove(bait);
-		this.items.splice(ndx, 1);
+		if(~ndx) {
+			World.remove(this.world, bait);
+			this.items.splice(ndx, 1);
+		}
 	}
 	clear() {
-		this.world.remove(this.items);
+		World.remove(this.world, this.items);
 		this.items.splice(0);
 	}
-	decay(dt: number) {
+	tick(dt: number) {
 		let baits = this.items;
 		for(let i=0; i<baits.length;) {
 			let bait = baits[i];
 			if(0> (bait.life -= dt/1000)) {
-				this.world.remove(bait);
+				World.remove(this.world, bait);
 				baits.splice(i, 1);
 			}
 			else {
@@ -50,12 +46,13 @@ export default class Baits {
 				// ==> deleting the view makes it invisible, even if the view is re-created
 				// ? Physics.body('compound', ...
 				let rad = baitRadius * bait.life/lifeSpan;
-				bait.geometry.options({radius: rad});
+				/*bait.geometry.options({radius: rad});
 				bait.geometry.radius = rad;
 				bait.options({radius: rad});
 				bait.radius = rad;
 				document.title = ''+ rad;
-				bait.dirtyView = true;
+				bait.dirtyView = true;*/
+				bait.circleRadius = rad;
 				i++;
 			}
 		}

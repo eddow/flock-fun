@@ -10,7 +10,8 @@ const viewWidth = 1536,
 	wallOptions = {
 		isStatic: true,
 		friction: 0,
-		restitution: 1
+		restitution: 1,
+		label: 'Border walls'
 	},
 	walls = [
 		Bodies.rectangle(viewWidth/2, -wallThick/2, viewWidth, wallThick, wallOptions),
@@ -39,18 +40,11 @@ const viewWidth = 1536,
 
 const runner = Runner.create();
 
-
 World.add(engine.world, walls);
 /*
 
 Physics(function(world) {
 
-	var viewportBounds = Physics.aabb(0, 0, viewWidth, viewHeight);
-	world.add(Physics.behavior('edge-collision-detection', {
-		aabb: viewportBounds,
-		restitution: 0.99,
-		cof: 0.99
-	}));
 	world.add(Physics.behavior('body-collision-detection'));
 	world.add(Physics.behavior('sweep-prune'));
 	world.add(Physics.behavior('body-impulse-response'));
@@ -69,21 +63,23 @@ Physics(function(world) {
 				scene.collide(c.bodyA, c.bodyB);
 		}
 	});
-
-	world.add(renderer);
-	world.on('step', function() {
-		world.render();
-	});
-
-	// `.applyTo([])` to avoid direct dragging of objects
-	world.add(Physics.behavior('interactive', {el: 'scene'}).applyTo([]));
-	world.on('interact:poke', function(data) {
-		scene.click(
-			data.x * viewWidth/renderer.el.clientWidth,
-			data.y * viewHeight/renderer.el.clientHeight
-		);
-	});
 });*/
+Events.on(engine, 'collisionStart', function(event) {
+	for (var pair of event.pairs) {
+		/*if('current-indicator'=== c.bodyA.name)
+			world.remove(c.bodyA);
+		else if('current-indicator'=== c.bodyB.name)
+			world.remove(c.bodyB);
+		else*/
+			scene.collide(pair.bodyA, pair.bodyB);
+	}
+});
+render.canvas.addEventListener('click', function(event) {
+		scene.click(
+			event.offsetX * viewWidth/render.canvas.clientWidth,
+			event.offsetY * viewHeight/render.canvas.clientHeight
+		);
+});
 Events.on(runner, 'tick', function(evt) {
 	scene.tick(evt.source.delta);
 });

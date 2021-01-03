@@ -11479,6 +11479,86 @@ function points_eq(a,b,precision){
 
 /***/ }),
 
+/***/ "./entities/baits.ts":
+/*!***************************!*\
+  !*** ./entities/baits.ts ***!
+  \***************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+var matter_js_1 = __webpack_require__(/*! matter-js */ "../node_modules/matter-js/build/matter.js");
+var lifeSpan = 10; //seconds
+var baitRadius = 4;
+var Baits = /** @class */ (function () {
+    function Baits(world, color) {
+        if (color === void 0) { color = 'orange'; }
+        this.world = world;
+        this.color = color;
+        this.items = [];
+    }
+    Baits.prototype.add = function (x, y) {
+        var bait = matter_js_1.Bodies.circle(x, y, baitRadius, {
+            label: 'Bait',
+            render: {
+                fillStyle: this.color
+            },
+            isSensor: true
+        });
+        bait.life = lifeSpan;
+        this.items.push(bait);
+        matter_js_1.World.add(this.world, bait);
+    };
+    Baits.prototype.remove = function (bait) {
+        var ndx = this.items.indexOf(bait);
+        if (~ndx) {
+            matter_js_1.World.remove(this.world, bait);
+            this.items.splice(ndx, 1);
+        }
+    };
+    Baits.prototype.clear = function () {
+        matter_js_1.World.remove(this.world, this.items);
+        this.items.splice(0);
+    };
+    Baits.prototype.tick = function (dt) {
+        var baits = this.items;
+        for (var i = 0; i < baits.length;) {
+            var bait = baits[i];
+            if (0 > (bait.life -= dt / 1000)) {
+                matter_js_1.World.remove(this.world, bait);
+                baits.splice(i, 1);
+            }
+            else {
+                // Note: no way to change the radius this way - TODO: find a way
+                // cfr renderer.js:156 view = body.view || ( body.view = this.createView(body.geometry, body.styles) );
+                // ==> deleting the view makes it invisible, even if the view is re-created
+                // ? Physics.body('compound', ...
+                var rad = baitRadius * bait.life / lifeSpan;
+                /*bait.geometry.options({radius: rad});
+                bait.geometry.radius = rad;
+                bait.options({radius: rad});
+                bait.radius = rad;
+                document.title = ''+ rad;
+                bait.dirtyView = true;*/
+                bait.circleRadius = rad;
+                i++;
+            }
+        }
+    }; /*
+    refreshViews() {
+        for(let bait of this.items)
+            if(bait.dirtyView)
+                bait.view = null;
+    }*/
+    Baits.lifeSpan = lifeSpan;
+    return Baits;
+}());
+exports.default = Baits;
+
+
+/***/ }),
+
 /***/ "./entities/fish.ts":
 /*!**************************!*\
   !*** ./entities/fish.ts ***!
@@ -11500,16 +11580,18 @@ var __values = (this && this.__values) || function(o) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 var matter_js_1 = __webpack_require__(/*! matter-js */ "../node_modules/matter-js/build/matter.js");
+var baits_1 = __webpack_require__(/*! ./baits */ "./entities/baits.ts");
 var distFix = 1;
-var angleVelMax = .02;
+var angleVelMax = .05;
 var pi = Math.PI;
 var flapCoolDown = 5;
 var maxVFlap = .1; // Cannot flap if already faster than this
 var hunger = .1; // How much it prefers the bait to the group : 0..1
 function Fish(options, flock) {
     var rv = matter_js_1.Bodies.trapezoid(options.x, options.y, flock.radius, flock.radius, .6, {
+        restitution: 1,
         angle: options.angle,
-        //type: 'fish',
+        label: 'Fish',
         render: {
             fillStyle: flock.color
         }
@@ -11564,16 +11646,11 @@ var fishPrototype = {
             tangle += Math.sign(angle - tangle) * delta;
             norm = Math.max(norm, velMax);
             Object.assign(direction, { x: Math.cos(tangle) * norm, y: Math.sin(tangle) * norm });
-            //Vector.rotate(direction, tangle, direction);
         }
-        /*if(bait && bait.position.distSq(this.position) < vradius) {
-            distance.clone(bait.position);
-            distance.vsub(this.position);
-            distance.normalise();
-            distance.mult(velMax*hunger*(bait.strength||1));
-            temp.mult(1-hunger);
-            temp.vadd(distance);
-        }*/
+        if (bait) {
+            var baitStrength = hunger * bait.life / baits_1.default.lifeSpan;
+            direction = matter_js_1.Vector.add(matter_js_1.Vector.mult(matter_js_1.Vector.normalise(matter_js_1.Vector.sub(bait.position, this.position)), velMax * (bait.strength || 1) * baitStrength), matter_js_1.Vector.mult(direction, 1 - baitStrength));
+        }
         if (matter_js_1.Vector.magnitudeSquared(direction)) {
             var newAngle = matter_js_1.Vector.angle({ x: 0, y: 0 }, direction);
             //this.fcd -= Math.abs(this.state.angular.pos - newAngle);
@@ -11668,7 +11745,7 @@ var Flock = /** @class */ (function () {
                 var ndx = neighbours.findIndex(function (n) { return n.dist === Infinity; });
                 if (~ndx)
                     neighbours.splice(ndx);
-                var baitProx = Infinity, nearestBait = null;
+                var baitProx = vradius, nearestBait = null;
                 if (this.options.baits) {
                     try {
                         for (var _h = (e_3 = void 0, __values(this.options.baits.items)), _j = _h.next(); !_j.done; _j = _h.next()) {
@@ -11723,10 +11800,21 @@ function findSortIndex(nrs, ins) {
 /*!******************!*\
   !*** ./index.ts ***!
   \******************/
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
 
+var __values = (this && this.__values) || function(o) {
+    var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
+    if (m) return m.call(o);
+    if (o && typeof o.length === "number") return {
+        next: function () {
+            if (o && i >= o.length) o = void 0;
+            return { value: o && o[i++], done: !o };
+        }
+    };
+    throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 var matter_js_1 = __webpack_require__(/*! matter-js */ "../node_modules/matter-js/build/matter.js");
 //import './stage/current'
@@ -11736,7 +11824,8 @@ var empty_1 = __webpack_require__(/*! ./scenes/empty */ "./scenes/empty.ts");
 var viewWidth = 1536, viewHeight = 755, wallThick = 50, wallOptions = {
     isStatic: true,
     friction: 0,
-    restitution: 1
+    restitution: 1,
+    label: 'Border walls'
 }, walls = [
     matter_js_1.Bodies.rectangle(viewWidth / 2, -wallThick / 2, viewWidth, wallThick, wallOptions),
     matter_js_1.Bodies.rectangle(viewWidth / 2, viewHeight + wallThick / 2, viewWidth, wallThick, wallOptions),
@@ -11763,12 +11852,6 @@ matter_js_1.World.add(engine.world, walls);
 
 Physics(function(world) {
 
-    var viewportBounds = Physics.aabb(0, 0, viewWidth, viewHeight);
-    world.add(Physics.behavior('edge-collision-detection', {
-        aabb: viewportBounds,
-        restitution: 0.99,
-        cof: 0.99
-    }));
     world.add(Physics.behavior('body-collision-detection'));
     world.add(Physics.behavior('sweep-prune'));
     world.add(Physics.behavior('body-impulse-response'));
@@ -11787,21 +11870,31 @@ Physics(function(world) {
                 scene.collide(c.bodyA, c.bodyB);
         }
     });
-
-    world.add(renderer);
-    world.on('step', function() {
-        world.render();
-    });
-
-    // `.applyTo([])` to avoid direct dragging of objects
-    world.add(Physics.behavior('interactive', {el: 'scene'}).applyTo([]));
-    world.on('interact:poke', function(data) {
-        scene.click(
-            data.x * viewWidth/renderer.el.clientWidth,
-            data.y * viewHeight/renderer.el.clientHeight
-        );
-    });
 });*/
+matter_js_1.Events.on(engine, 'collisionStart', function (event) {
+    var e_1, _a;
+    try {
+        for (var _b = __values(event.pairs), _c = _b.next(); !_c.done; _c = _b.next()) {
+            var pair = _c.value;
+            /*if('current-indicator'=== c.bodyA.name)
+                world.remove(c.bodyA);
+            else if('current-indicator'=== c.bodyB.name)
+                world.remove(c.bodyB);
+            else*/
+            scene.collide(pair.bodyA, pair.bodyB);
+        }
+    }
+    catch (e_1_1) { e_1 = { error: e_1_1 }; }
+    finally {
+        try {
+            if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
+        }
+        finally { if (e_1) throw e_1.error; }
+    }
+});
+render.canvas.addEventListener('click', function (event) {
+    scene.click(event.offsetX * viewWidth / render.canvas.clientWidth, event.offsetY * viewHeight / render.canvas.clientHeight);
+});
 matter_js_1.Events.on(runner, 'tick', function (evt) {
     scene.tick(evt.source.delta);
 });
@@ -11815,52 +11908,68 @@ matter_js_1.Render.run(render);
 /*!*************************!*\
   !*** ./scenes/empty.ts ***!
   \*************************/
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
 
+var __read = (this && this.__read) || function (o, n) {
+    var m = typeof Symbol === "function" && o[Symbol.iterator];
+    if (!m) return o;
+    var i = m.call(o), r, ar = [], e;
+    try {
+        while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
+    }
+    catch (error) { e = { error: error }; }
+    finally {
+        try {
+            if (r && !r.done && (m = i["return"])) m.call(i);
+        }
+        finally { if (e) throw e.error; }
+    }
+    return ar;
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 var flock_1 = __webpack_require__(/*! ../entities/flock */ "./entities/flock.ts");
-//import Baits from '../entities/baits'
+var baits_1 = __webpack_require__(/*! ../entities/baits */ "./entities/baits.ts");
 var Scene = /** @class */ (function () {
     function Scene(world, viewWidth, viewHeight) {
         this.world = world;
-        //baits: Baits = null
+        this.baits = null;
         this.flock = null;
-        //this.baits = new Baits(world);
+        this.baits = new baits_1.default(world);
         this.flock = new flock_1.default({
             world: world,
             number: 50,
             neighbours: 6,
             comfortDistance: 30,
-            baits: null,
+            baits: this.baits,
             radius: 10,
             velocity: 2,
             color: 'green',
-            visibility: 150
+            visibility: 200
         }, function () { return ({
             x: Math.random() * viewWidth,
             y: Math.random() * viewHeight,
             angle: Math.random() * Math.PI * 2,
-            styles: {
-                strokeStyle: 'hsla(60, 37%, 17%, 1)',
-                lineWidth: 1,
-                fillStyle: 'hsla(60, 37%, 57%, 0.8)',
-                angleIndicator: 'hsla(60, 37%, 17%, 0.4)'
-            }
+            restitution: 1
         }); });
     }
     Scene.prototype.clear = function () {
         this.flock.clear();
-        //this.baits.clear();
+        this.baits.clear();
     };
     Scene.prototype.click = function (x, y) {
-        //this.baits.add(x, y);
+        this.baits.add(x, y);
     };
     Scene.prototype.collide = function (bA, bB) {
+        var _a;
+        if ('Bait' === bA.label)
+            _a = __read([bB, bA], 2), bA = _a[0], bB = _a[1];
+        if ('Fish' === bA.label && 'Bait' === bB.label)
+            this.baits.remove(bB);
     };
     Scene.prototype.tick = function (dt) {
-        //this.baits.decay(dt);
+        this.baits.tick(dt);
         this.flock.tick(dt);
     };
     return Scene;
@@ -11912,8 +12021,8 @@ exports.default = Scene;
 /************************************************************************/
 /******/ 	// startup
 /******/ 	// Load entry module
+/******/ 	// This entry module is referenced by other modules so it can't be inlined
 /******/ 	__webpack_require__("./index.ts");
-/******/ 	// This entry module used 'exports' so it can't be inlined
 /******/ })()
 ;
 //# sourceMappingURL=index.js.map

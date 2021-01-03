@@ -35,7 +35,7 @@ export default class Scene {
 					fillStyle: 'hsla(60, 37%, 57%, 0.8)',
 					angleIndicator: 'hsla(60, 37%, 17%, 0.4)'
 				},
-				visibility: 150
+				visibility: 200
 			}));
 		this.counterFlock = new Flock(
 			world,
@@ -55,7 +55,7 @@ export default class Scene {
 					fillStyle: 'hsla(0, 37%, 57%, 0.8)',
 					angleIndicator: 'hsla(0, 37%, 17%, 0.4)'
 				},
-				visibility: 150
+				visibility: 200
 			}));
 
 		Current.add(this.source = new Source(world, Physics.vector(100, 100), 300, .5));

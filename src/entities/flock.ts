@@ -1,10 +1,10 @@
-import {World, Vector} from 'matter-js'
+import {World, Vector, Body} from 'matter-js'
 import {FishOptions, FlockOptions} from './options'
 import Fish from './fish'
 //import Baits from './baits'
 
 export default class Flock {
-	items: any[]
+	items: Body[]
 	constructor(
 		public options: FlockOptions,
 		public fishOptions: (i: number)=> FishOptions
@@ -43,7 +43,7 @@ export default class Flock {
 			}
 			let ndx = neighbours.findIndex(n=> n.dist === Infinity);
 			if(~ndx) neighbours.splice(ndx);
-			let baitProx = Infinity, nearestBait = null;
+			let baitProx = vradius, nearestBait = null;
 			if(this.options.baits) {
 				for(let bait of this.options.baits.items) {
 					let dist = Vector.magnitudeSquared(Vector.sub(bait.position, fish.position));

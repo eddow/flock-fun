@@ -1,8 +1,9 @@
 import {Vector, Body, Bodies} from 'matter-js'
 import {FishOptions, FlockOptions} from './options'
+import Baits from './baits'
 
 const distFix = 1;
-const angleVelMax = .02;
+const angleVelMax = .05;
 const pi = Math.PI;
 const flapCoolDown = 5;
 const maxVFlap = .1;	// Cannot flap if already faster than this
@@ -10,8 +11,9 @@ const hunger = .1;	// How much it prefers the bait to the group : 0..1
 
 export default function Fish(options: FishOptions, flock: FlockOptions) {
 	var rv = Bodies.trapezoid(options.x, options.y, flock.radius, flock.radius, .6, {
+		restitution: 1,
 		angle: options.angle,
-		//type: 'fish',
+		label: 'Fish',
 		render: {
 			fillStyle: flock.color
 		}
@@ -72,16 +74,21 @@ const fishPrototype = {
 			tangle += Math.sign(angle-tangle) * delta;
 			norm = Math.max(norm, velMax);
 			Object.assign(direction, {x: Math.cos(tangle)*norm, y: Math.sin(tangle)*norm});
-			//Vector.rotate(direction, tangle, direction);
 		}
-		/*if(bait && bait.position.distSq(this.position) < vradius) {
-			distance.clone(bait.position);
-			distance.vsub(this.position);
-			distance.normalise();
-			distance.mult(velMax*hunger*(bait.strength||1));
-			temp.mult(1-hunger);
-			temp.vadd(distance);
-		}*/
+		if(bait) {
+			let baitStrength = hunger*bait.life / Baits.lifeSpan;
+			direction = Vector.add(
+				Vector.mult(
+					Vector.normalise(
+						Vector.sub(bait.position, this.position)
+					),
+					velMax*(bait.strength||1) * baitStrength
+				), Vector.mult(
+					direction,
+					1 - baitStrength
+				)
+			);
+		}
 		if(Vector.magnitudeSquared(direction)) {
 			let newAngle = Vector.angle({x:0, y:0}, direction);
 			//this.fcd -= Math.abs(this.state.angular.pos - newAngle);
