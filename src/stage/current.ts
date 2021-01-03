@@ -1,7 +1,7 @@
 import {Vector, World, Body, Bodies} from 'matter-js'
 
 const indicatorInterract = 5;	// Distance at which indicators interract with currents
-const avgIndicatorLife = .5;
+const avgIndicatorLife = 1;
 
 export default abstract class Current {
 	constructor(public world: World) {
@@ -26,6 +26,7 @@ export default abstract class Current {
 				inertia: 10,
 				frictionAir: 0.8
 			});
+		indicator.current = this;
 		indicator.life = (1+Math.random()) * avgIndicatorLife;
 		World.add(this.world, indicator);
 		this.indicators.add(indicator);
@@ -35,8 +36,10 @@ export default abstract class Current {
 		this.indicators.clear();
 	}
 	remove(indicator: Body) {
-		World.remove(this.world, indicator);
-		this.indicators.delete(indicator);
+		if(this.indicators.has(indicator)) {
+			World.remove(this.world, indicator);
+			this.indicators.delete(indicator);
+		}
 	}
 	tick(dt: number) {
 		var bodies = this.world.bodies;

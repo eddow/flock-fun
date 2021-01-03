@@ -83,11 +83,17 @@ export default class Scene {
 	click(x: number, y: number) {
 		this.baits.add(x, y);
 	}
-	collide(bA: any, bB: any) {
-		// TODO: only flock eats bait, not counter-flock ?
-		if('Bait'=== bA.label) [bA, bB] = [bB, bA];
-		if('Fish'=== bA.label && 'Bait'=== bB.label)
-			this.baits.remove(bB);
+	collide(bA: Body, bB: Body) {
+		if('Current indicator'=== bA.label)
+			bA.current.remove(bA);
+		else if('Current indicator'=== bB.label)
+			bB.current.remove(bB);
+		else {
+			// TODO: only flock eats bait, not counter-flock ?
+			if('Bait'=== bA.label) [bA, bB] = [bB, bA];
+			if('Fish'=== bA.label && 'Bait'=== bB.label)
+				this.baits.remove(bB);
+		}
 	}
 	tick(dt) {
 		this.baits.tick(dt);

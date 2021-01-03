@@ -12011,11 +12011,17 @@ var Scene = /** @class */ (function () {
     };
     Scene.prototype.collide = function (bA, bB) {
         var _a;
-        // TODO: only flock eats bait, not counter-flock ?
-        if ('Bait' === bA.label)
-            _a = __read([bB, bA], 2), bA = _a[0], bB = _a[1];
-        if ('Fish' === bA.label && 'Bait' === bB.label)
-            this.baits.remove(bB);
+        if ('Current indicator' === bA.label)
+            bA.current.remove(bA);
+        else if ('Current indicator' === bB.label)
+            bB.current.remove(bB);
+        else {
+            // TODO: only flock eats bait, not counter-flock ?
+            if ('Bait' === bA.label)
+                _a = __read([bB, bA], 2), bA = _a[0], bB = _a[1];
+            if ('Fish' === bA.label && 'Bait' === bB.label)
+                this.baits.remove(bB);
+        }
     };
     Scene.prototype.tick = function (dt) {
         this.baits.tick(dt);
@@ -12054,7 +12060,7 @@ var __values = (this && this.__values) || function(o) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 var matter_js_1 = __webpack_require__(/*! matter-js */ "../node_modules/matter-js/build/matter.js");
 var indicatorInterract = 5; // Distance at which indicators interract with currents
-var avgIndicatorLife = .5;
+var avgIndicatorLife = 1;
 var Current = /** @class */ (function () {
     function Current(world) {
         this.world = world;
@@ -12069,6 +12075,7 @@ var Current = /** @class */ (function () {
             inertia: 10,
             frictionAir: 0.8
         });
+        indicator.current = this;
         indicator.life = (1 + Math.random()) * avgIndicatorLife;
         matter_js_1.World.add(this.world, indicator);
         this.indicators.add(indicator);
@@ -12078,8 +12085,10 @@ var Current = /** @class */ (function () {
         this.indicators.clear();
     };
     Current.prototype.remove = function (indicator) {
-        matter_js_1.World.remove(this.world, indicator);
-        this.indicators.delete(indicator);
+        if (this.indicators.has(indicator)) {
+            matter_js_1.World.remove(this.world, indicator);
+            this.indicators.delete(indicator);
+        }
     };
     Current.prototype.tick = function (dt) {
         var e_1, _a, e_2, _b;
