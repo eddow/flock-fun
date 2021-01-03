@@ -11,7 +11,9 @@
   "author": "fmdm",
   "license": "ISC",
   "dependencies": {
-    "physicsjs": "^0.7.0"
+    "matter-js": "^0.15.0",
+    "physicsjs": "^0.7.0",
+    "poly-decomp": "^0.3.0"
   },
   "devDependencies": {
     "html-webpack-plugin": "^4.5.0",

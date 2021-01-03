@@ -17,7 +17,7 @@ export default class Well extends Current {
 			calc.vsub(this.position);
 			let norm = calc.norm();
 			if(norm && norm < this.radius) {
-				calc.normalize();
+				calc.normalise();
 				calc.mult(-this.strength/(attenuation+norm));
 			} else calc.zero();
 			return calc;

@@ -1,21 +1,49 @@
-import * as Physics from 'physicsjs'
-import './stage/current'
+import {Engine, Render, World, Runner, Bodies, Events} from 'matter-js'
+//import './stage/current'
 import EmptyScene from './scenes/empty'
-import TestScene from './scenes/test'
+//import TestScene from './scenes/test'
 
-// Estimtion of 16:9
-const viewWidth = 1536;
-const viewHeight = 755;
-const renderer = Physics.renderer('canvas', {
-    el: 'scene',
-    width: viewWidth,
-    height: viewHeight,
-	autoResize: false,
-    meta: false
-});
+// Estimation of ~16:9
+const viewWidth = 1536,
+	viewHeight = 755,
+	wallThick = 50,
+	wallOptions = {
+		isStatic: true,
+		friction: 0,
+		restitution: 1
+	},
+	walls = [
+		Bodies.rectangle(viewWidth/2, -wallThick/2, viewWidth, wallThick, wallOptions),
+		Bodies.rectangle(viewWidth/2, viewHeight+wallThick/2, viewWidth, wallThick, wallOptions),
+		Bodies.rectangle(-wallThick/2, viewHeight/2, wallThick, viewHeight, wallOptions),
+		Bodies.rectangle(viewWidth+wallThick/2, viewHeight/2, wallThick, viewHeight, wallOptions)
+	],
+	world = World.create({
+		gravity: {x:0, y:0},
+		bounds: {
+			min: {x:0, y:0},
+			max: {x:viewWidth, y:viewHeight}
+		}
+	}),
+	engine = Engine.create({world}),
+	scene = new EmptyScene(world, viewWidth, viewHeight),
+	render = Render.create({
+		element: document.body,
+		engine: engine,
+		options: {
+			width: viewWidth,
+			height: viewHeight,
+			wireframes: false
+		}
+	});
+
+const runner = Runner.create();
+
+
+World.add(engine.world, walls);
+/*
 
 Physics(function(world) {
-	const scene = new TestScene(world, viewWidth, viewHeight);
 
 	var viewportBounds = Physics.aabb(0, 0, viewWidth, viewHeight);
 	world.add(Physics.behavior('edge-collision-detection', {
@@ -55,15 +83,10 @@ Physics(function(world) {
 			data.y * viewHeight/renderer.el.clientHeight
 		);
 	});
-	var oldTime = 0;
-	Physics.util.ticker.on(function(time) {
-		if(oldTime) {
-			var dt = time-oldTime;
-			scene.tick(dt);
-		}
-		oldTime = time;
-		world.step(time);
-	});
-	// start the ticker
-	Physics.util.ticker.start();
+});*/
+Events.on(runner, 'tick', function(evt) {
+	scene.tick(evt.source.delta);
 });
+
+Runner.run(runner, engine);
+Render.run(render);
