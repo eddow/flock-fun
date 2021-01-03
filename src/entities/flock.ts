@@ -4,19 +4,19 @@ import Fish from './fish'
 //import Baits from './baits'
 
 export default class Flock {
-	items: Body[]
+	items: Set<Body>
 	constructor(
 		public options: FlockOptions,
 		public fishOptions: (i: number)=> FishOptions
 	) {
 		console.assert(options.neighbours < options.number, 'Comparison neighbours less than number-1')
-		this.items = [];
+		this.items = new Set<Body>();
 		for(let i=0; i<options.number; ++i)
-			this.items.push(Fish(fishOptions(i), options));
-		World.add(options.world, this.items);
+			this.items.add(Fish(fishOptions(i), options));
+		World.add(options.world, Array.from(this.items));
 	}
 	clear() {
-		World.remove(this.options.world, this.items);
+		World.remove(this.options.world, Array.from(this.items));
 	}
 	tick(dt: number) {
 		var neighbours,

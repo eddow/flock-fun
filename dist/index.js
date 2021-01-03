@@ -11483,10 +11483,21 @@ function points_eq(a,b,precision){
 /*!***************************!*\
   !*** ./entities/baits.ts ***!
   \***************************/
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
 
+var __values = (this && this.__values) || function(o) {
+    var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
+    if (m) return m.call(o);
+    if (o && typeof o.length === "number") return {
+        next: function () {
+            if (o && i >= o.length) o = void 0;
+            return { value: o && o[i++], done: !o };
+        }
+    };
+    throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 var matter_js_1 = __webpack_require__(/*! matter-js */ "../node_modules/matter-js/build/matter.js");
 var lifeSpan = 10; //seconds
@@ -11496,7 +11507,7 @@ var Baits = /** @class */ (function () {
         if (color === void 0) { color = 'orange'; }
         this.world = world;
         this.color = color;
-        this.items = [];
+        this.items = new Set();
     }
     Baits.prototype.add = function (x, y) {
         var bait = matter_js_1.Bodies.circle(x, y, baitRadius, {
@@ -11507,50 +11518,38 @@ var Baits = /** @class */ (function () {
             isSensor: true
         });
         bait.life = lifeSpan;
-        this.items.push(bait);
+        this.items.add(bait);
         matter_js_1.World.add(this.world, bait);
     };
     Baits.prototype.remove = function (bait) {
-        var ndx = this.items.indexOf(bait);
-        if (~ndx) {
+        if (this.items.has(bait)) {
             matter_js_1.World.remove(this.world, bait);
-            this.items.splice(ndx, 1);
+            this.items.delete(bait);
         }
     };
     Baits.prototype.clear = function () {
-        matter_js_1.World.remove(this.world, this.items);
-        this.items.splice(0);
+        matter_js_1.World.remove(this.world, Array.from(this.items));
+        this.items.clear();
     };
     Baits.prototype.tick = function (dt) {
-        var baits = this.items;
-        for (var i = 0; i < baits.length;) {
-            var bait = baits[i];
-            if (0 > (bait.life -= dt / 1000)) {
-                matter_js_1.World.remove(this.world, bait);
-                baits.splice(i, 1);
-            }
-            else {
-                // Note: no way to change the radius this way - TODO: find a way
-                // cfr renderer.js:156 view = body.view || ( body.view = this.createView(body.geometry, body.styles) );
-                // ==> deleting the view makes it invisible, even if the view is re-created
-                // ? Physics.body('compound', ...
-                var rad = baitRadius * bait.life / lifeSpan;
-                /*bait.geometry.options({radius: rad});
-                bait.geometry.radius = rad;
-                bait.options({radius: rad});
-                bait.radius = rad;
-                document.title = ''+ rad;
-                bait.dirtyView = true;*/
-                bait.circleRadius = rad;
-                i++;
+        var e_1, _a;
+        try {
+            for (var _b = __values(this.items), _c = _b.next(); !_c.done; _c = _b.next()) {
+                var bait = _c.value;
+                if (0 > (bait.life -= dt / 1000))
+                    this.remove(bait);
+                else
+                    bait.circleRadius = baitRadius * bait.life / lifeSpan;
             }
         }
-    }; /*
-    refreshViews() {
-        for(let bait of this.items)
-            if(bait.dirtyView)
-                bait.view = null;
-    }*/
+        catch (e_1_1) { e_1 = { error: e_1_1 }; }
+        finally {
+            try {
+                if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
+            }
+            finally { if (e_1) throw e_1.error; }
+        }
+    };
     Baits.lifeSpan = lifeSpan;
     return Baits;
 }());
@@ -11592,6 +11591,7 @@ function Fish(options, flock) {
         restitution: 1,
         angle: options.angle,
         label: 'Fish',
+        inertia: flock.inertia || flock.radius,
         render: {
             fillStyle: flock.color
         }
@@ -11702,13 +11702,13 @@ var Flock = /** @class */ (function () {
         this.options = options;
         this.fishOptions = fishOptions;
         console.assert(options.neighbours < options.number, 'Comparison neighbours less than number-1');
-        this.items = [];
+        this.items = new Set();
         for (var i = 0; i < options.number; ++i)
-            this.items.push(fish_1.default(fishOptions(i), options));
-        matter_js_1.World.add(options.world, this.items);
+            this.items.add(fish_1.default(fishOptions(i), options));
+        matter_js_1.World.add(options.world, Array.from(this.items));
     }
     Flock.prototype.clear = function () {
-        matter_js_1.World.remove(this.options.world, this.items);
+        matter_js_1.World.remove(this.options.world, Array.from(this.items));
     };
     Flock.prototype.tick = function (dt) {
         var e_1, _a, e_2, _b, e_3, _c;
@@ -11933,6 +11933,8 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 var matter_js_1 = __webpack_require__(/*! matter-js */ "../node_modules/matter-js/build/matter.js");
 var flock_1 = __webpack_require__(/*! ../entities/flock */ "./entities/flock.ts");
 var baits_1 = __webpack_require__(/*! ../entities/baits */ "./entities/baits.ts");
+var source_1 = __webpack_require__(/*! ../stage/source */ "./stage/source.ts");
+var well_1 = __webpack_require__(/*! ../stage/well */ "./stage/well.ts");
 var gap = 200;
 var wallWidth = 10;
 var Scene = /** @class */ (function () {
@@ -11967,7 +11969,7 @@ var Scene = /** @class */ (function () {
             number: 20,
             neighbours: 6,
             comfortDistance: 40,
-            radius: 20,
+            radius: 15,
             velocity: 3,
             color: 'red',
             visibility: 200
@@ -11992,6 +11994,8 @@ var Scene = /** @class */ (function () {
             label: 'Wall',
             isStatic: true
         }));
+        this.source = new source_1.default(world, matter_js_1.Vector.create(100, 100), 300, .05);
+        this.well = new well_1.default(world, matter_js_1.Vector.create(400, 400), 300, .05);
     }
     Scene.prototype.clear = function (world) {
         this.flock.clear();
@@ -11999,7 +12003,8 @@ var Scene = /** @class */ (function () {
         this.baits.clear();
         matter_js_1.World.remove(this.world, this.ball);
         matter_js_1.World.remove(this.world, this.wall);
-        //Current.clear(this.world);
+        this.source.clear();
+        this.well.clear();
     };
     Scene.prototype.click = function (x, y) {
         this.baits.add(x, y);
@@ -12016,11 +12021,202 @@ var Scene = /** @class */ (function () {
         this.baits.tick(dt);
         this.flock.tick(dt);
         this.counterFlock.tick(dt);
+        this.source.tick(dt);
+        this.well.tick(dt);
     };
     return Scene;
 }());
 exports.default = Scene;
 ;
+
+
+/***/ }),
+
+/***/ "./stage/current.ts":
+/*!**************************!*\
+  !*** ./stage/current.ts ***!
+  \**************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __values = (this && this.__values) || function(o) {
+    var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
+    if (m) return m.call(o);
+    if (o && typeof o.length === "number") return {
+        next: function () {
+            if (o && i >= o.length) o = void 0;
+            return { value: o && o[i++], done: !o };
+        }
+    };
+    throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+var matter_js_1 = __webpack_require__(/*! matter-js */ "../node_modules/matter-js/build/matter.js");
+var indicatorInterract = 5; // Distance at which indicators interract with currents
+var avgIndicatorLife = .5;
+var Current = /** @class */ (function () {
+    function Current(world) {
+        this.world = world;
+        this.indicatorInterract = indicatorInterract;
+        this.emit = null;
+        this.absorb = null;
+        this.indicators = new Set();
+    }
+    Current.prototype.addIndicator = function () {
+        var angle = Math.random() * Math.PI * 2, pos = matter_js_1.Vector.add(this.position, matter_js_1.Vector.create(this.indicatorInterract * Math.cos(angle), this.indicatorInterract * Math.sin(angle))), indicator = matter_js_1.Bodies.circle(pos.x, pos.y, 1, {
+            label: 'Current indicator',
+            inertia: 10,
+            frictionAir: 0.8
+        });
+        indicator.life = (1 + Math.random()) * avgIndicatorLife;
+        matter_js_1.World.add(this.world, indicator);
+        this.indicators.add(indicator);
+    };
+    Current.prototype.clear = function () {
+        matter_js_1.World.remove(this.world, Array.from(this.indicators));
+        this.indicators.clear();
+    };
+    Current.prototype.remove = function (indicator) {
+        matter_js_1.World.remove(this.world, indicator);
+        this.indicators.delete(indicator);
+    };
+    Current.prototype.tick = function (dt) {
+        var e_1, _a, e_2, _b;
+        var bodies = this.world.bodies;
+        var calc = matter_js_1.Vector.create();
+        try {
+            for (var _c = __values(this.indicators), _d = _c.next(); !_d.done; _d = _c.next()) {
+                var indicator = _d.value;
+                if ((indicator.life -= dt / 1000) <= 0)
+                    this.remove(indicator);
+            }
+        }
+        catch (e_1_1) { e_1 = { error: e_1_1 }; }
+        finally {
+            try {
+                if (_d && !_d.done && (_a = _c.return)) _a.call(_c);
+            }
+            finally { if (e_1) throw e_1.error; }
+        }
+        try {
+            for (var bodies_1 = __values(bodies), bodies_1_1 = bodies_1.next(); !bodies_1_1.done; bodies_1_1 = bodies_1.next()) {
+                var item = bodies_1_1.value;
+                matter_js_1.Body.applyForce(item, this.position, matter_js_1.Vector.mult(this.exert(item.position), item.inverseInertia));
+            }
+        }
+        catch (e_2_1) { e_2 = { error: e_2_1 }; }
+        finally {
+            try {
+                if (bodies_1_1 && !bodies_1_1.done && (_b = bodies_1.return)) _b.call(bodies_1);
+            }
+            finally { if (e_2) throw e_2.error; }
+        }
+        if (Math.random() * dt / 1000 < 1)
+            this.addIndicator();
+    };
+    return Current;
+}());
+exports.default = Current;
+
+
+/***/ }),
+
+/***/ "./stage/source.ts":
+/*!*************************!*\
+  !*** ./stage/source.ts ***!
+  \*************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+var matter_js_1 = __webpack_require__(/*! matter-js */ "../node_modules/matter-js/build/matter.js");
+var current_1 = __webpack_require__(/*! ./current */ "./stage/current.ts");
+var attenuation = 10; // To avoid 1/~0 infinite strength when near the center
+var Source = /** @class */ (function (_super) {
+    __extends(Source, _super);
+    function Source(world, position, radius, strength) {
+        var _this = _super.call(this, world) || this;
+        _this.position = position;
+        _this.radius = radius;
+        _this.strength = strength;
+        _this.emit = position;
+        return _this;
+    }
+    Source.prototype.exert = function (position) {
+        var calc = matter_js_1.Vector.sub(position, this.position);
+        var mag = matter_js_1.Vector.magnitude(calc);
+        return mag && mag < this.radius ?
+            matter_js_1.Vector.mult(matter_js_1.Vector.normalise(calc), this.strength / (attenuation + mag)) :
+            matter_js_1.Vector.create();
+    };
+    return Source;
+}(current_1.default));
+exports.default = Source;
+
+
+/***/ }),
+
+/***/ "./stage/well.ts":
+/*!***********************!*\
+  !*** ./stage/well.ts ***!
+  \***********************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+var matter_js_1 = __webpack_require__(/*! matter-js */ "../node_modules/matter-js/build/matter.js");
+var current_1 = __webpack_require__(/*! ./current */ "./stage/current.ts");
+var attenuation = 10; // To avoid 1/~0 infinite strength
+var Well = /** @class */ (function (_super) {
+    __extends(Well, _super);
+    function Well(world, position, radius, strength) {
+        var _this = _super.call(this, world) || this;
+        _this.position = position;
+        _this.radius = radius;
+        _this.strength = strength;
+        _this.absorb = position;
+        _this.indicatorInterract = radius - _this.indicatorInterract;
+        return _this;
+    }
+    Well.prototype.exert = function (position) {
+        var calc = matter_js_1.Vector.sub(position, this.position);
+        var mag = matter_js_1.Vector.magnitude(calc);
+        return mag && mag < this.radius ?
+            matter_js_1.Vector.mult(matter_js_1.Vector.normalise(calc), -this.strength / (attenuation + mag)) :
+            matter_js_1.Vector.create();
+    };
+    return Well;
+}(current_1.default));
+exports.default = Well;
 
 
 /***/ })

@@ -1,4 +1,4 @@
-import {World, Body, Bodies} from 'matter-js'
+import {World, Body, Bodies, Vector} from 'matter-js'
 import Flock from '../entities/flock'
 import Baits from '../entities/baits'
 import Current from '../stage/current'
@@ -40,7 +40,7 @@ export default class Scene {
 			number: 20,	// nr of fish
 			neighbours: 6,	// nr of neighbours considered
 			comfortDistance: 40, // Where does this fish feel comfortable distant from others
-			radius: 20,
+			radius: 15,
 			velocity: 3,
 			color: 'red',
 			visibility: 200
@@ -68,6 +68,8 @@ export default class Scene {
 				label: 'Wall',
 				isStatic: true
 			}));
+		this.source = new Source(world, Vector.create(100, 100), 300, .05);
+		this.well = new Well(world, Vector.create(400, 400), 300, .05);
 	}
 	clear(world) {
 		this.flock.clear();
@@ -75,7 +77,8 @@ export default class Scene {
 		this.baits.clear();
 		World.remove(this.world, this.ball);
 		World.remove(this.world, this.wall);
-		//Current.clear(this.world);
+		this.source.clear();
+		this.well.clear();
 	}
 	click(x: number, y: number) {
 		this.baits.add(x, y);
@@ -90,5 +93,7 @@ export default class Scene {
 		this.baits.tick(dt);
 		this.flock.tick(dt);
 		this.counterFlock.tick(dt);
+		this.source.tick(dt);
+		this.well.tick(dt);
 	}
 };

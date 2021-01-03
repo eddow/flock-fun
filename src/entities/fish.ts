@@ -14,6 +14,7 @@ export default function Fish(options: FishOptions, flock: FlockOptions) {
 		restitution: 1,
 		angle: options.angle,
 		label: 'Fish',
+		inertia: flock.inertia || flock.radius,
 		render: {
 			fillStyle: flock.color
 		}
