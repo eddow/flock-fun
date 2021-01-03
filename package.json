@@ -12,7 +12,6 @@
   "license": "ISC",
   "dependencies": {
     "matter-js": "^0.15.0",
-    "physicsjs": "^0.7.0",
     "poly-decomp": "^0.3.0"
   },
   "devDependencies": {
