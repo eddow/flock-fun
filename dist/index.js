@@ -12008,6 +12008,10 @@ var Baits = /** @class */ (function () {
         this.world.remove(bait);
         this.items.splice(ndx, 1);
     };
+    Baits.prototype.clear = function () {
+        this.world.remove(this.items);
+        this.items.splice(0);
+    };
     Baits.prototype.decay = function (dt) {
         var baits = this.items;
         for (var i = 0; i < baits.length;) {
@@ -12145,7 +12149,7 @@ Physics.body('fish', 'circle', function (parent) {
                     distance.clone(bait.state.pos);
                     distance.vsub(this.state.pos);
                     distance.normalize();
-                    distance.mult(velMax * hunger);
+                    distance.mult(velMax * hunger * (bait.strength || 1));
                     temp.mult(1 - hunger);
                     temp.vadd(distance);
                 }
@@ -12201,19 +12205,24 @@ var Physics = __webpack_require__(/*! physicsjs */ "../node_modules/physicsjs/di
 __webpack_require__(/*! ./fish */ "./entities/fish.ts");
 var Flock = /** @class */ (function () {
     function Flock(world, number, nearest, comfortDistance, baits, opts) {
+        this.world = world;
         console.assert(nearest < number, 'Comparison neighbours less than number-1');
         this.items = [];
         for (var i = 0; i < number; ++i) {
             var fish = Physics.body('fish', opts(i));
             this.items.push(fish);
-            world.add(fish);
         }
+        world.add(this.items);
         world.add(this.behavior = Physics.behavior('flock', {
             nearest: nearest,
             baits: baits,
             comfortDistance: comfortDistance
         }).applyTo(this.items));
     }
+    Flock.prototype.clear = function () {
+        this.world.remove(this.items);
+        this.world.remove(this.behavior);
+    };
     return Flock;
 }());
 exports.default = Flock;
@@ -12315,13 +12324,11 @@ Physics.behavior('flock', function (parent) {
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 var Physics = __webpack_require__(/*! physicsjs */ "../node_modules/physicsjs/dist/physicsjs-full.js");
-var flock_1 = __webpack_require__(/*! ./entities/flock */ "./entities/flock.ts");
-var baits_1 = __webpack_require__(/*! ./entities/baits */ "./entities/baits.ts");
-var current_1 = __webpack_require__(/*! ./stage/current */ "./stage/current.ts");
-var source_1 = __webpack_require__(/*! ./stage/source */ "./stage/source.ts");
-var well_1 = __webpack_require__(/*! ./stage/well */ "./stage/well.ts");
-var viewWidth = 1000;
-var viewHeight = 700;
+__webpack_require__(/*! ./stage/current */ "./stage/current.ts");
+var test_1 = __webpack_require__(/*! ./scenes/test */ "./scenes/test.ts");
+// Estimtion of 16:9
+var viewWidth = 1536;
+var viewHeight = 755;
 var renderer = Physics.renderer('canvas', {
     el: 'scene',
     width: viewWidth,
@@ -12330,52 +12337,7 @@ var renderer = Physics.renderer('canvas', {
     meta: false
 });
 Physics(function (world) {
-    var baits = new baits_1.default(world);
-    var flock = new flock_1.default(world, 50, // nr of fish
-    6, // nr of neighbours considered
-    30, // Where does this fish feel comfortable distant from others
-    baits, function () { return ({
-        x: Math.random() * viewWidth,
-        y: Math.random() * viewHeight,
-        angle: Math.random() * Math.PI * 2,
-        radius: 5,
-        velMax: .1,
-        styles: {
-            strokeStyle: 'hsla(60, 37%, 17%, 1)',
-            lineWidth: 1,
-            fillStyle: 'hsla(60, 37%, 57%, 0.8)',
-            angleIndicator: 'hsla(60, 37%, 17%, 0.4)'
-        },
-        visibility: 150
-    }); });
-    var counterFlock = new flock_1.default(world, 20, // nr of fish
-    6, // nr of neighbours considered
-    50, // Where does this fish feel comfortable distant from others
-    null, function () { return ({
-        x: Math.random() * viewWidth,
-        y: Math.random() * viewHeight,
-        angle: Math.random() * Math.PI * 2,
-        radius: 10,
-        velMax: .15,
-        styles: {
-            strokeStyle: 'hsla(0, 37%, 17%, 1)',
-            lineWidth: 1,
-            fillStyle: 'hsla(0, 37%, 57%, 0.8)',
-            angleIndicator: 'hsla(0, 37%, 17%, 0.4)'
-        },
-        visibility: 150
-    }); });
-    current_1.default.add(new source_1.default(Physics.vector(100, 100), 300, .5));
-    current_1.default.add(new well_1.default(Physics.vector(400, 400), 300, .5));
-    var ball = Physics.body('circle', {
-        x: 300, y: 300, radius: 50, mass: 50,
-        styles: {
-            strokeStyle: 'hsla(140, 37%, 17%, 1)',
-            lineWidth: 1,
-            fillStyle: 'hsla(140, 37%, 57%, 0.8)',
-        }
-    });
-    world.add(ball);
+    var scene = new test_1.default(world, viewWidth, viewHeight);
     var viewportBounds = Physics.aabb(0, 0, viewWidth, viewHeight);
     world.add(Physics.behavior('edge-collision-detection', {
         aabb: viewportBounds,
@@ -12394,22 +12356,8 @@ Physics(function (world) {
                 world.remove(c.bodyA);
             else if ('current-indicator' === c.bodyB.name)
                 world.remove(c.bodyB);
-            else {
-                if ('fish' === c.bodyA.name) {
-                    bF = c.bodyA;
-                    bB = c.bodyB;
-                }
-                else {
-                    bF = c.bodyB;
-                    bB = c.bodyA;
-                }
-                if ('fish' === bF.name && 'bait' === bB.name) {
-                    //bF.something
-                    // TODO: instead: decay(K*data.overlap) ?
-                    // TODO: Only eat your bait? (cf. counter-flock)
-                    baits.remove(bB);
-                }
-            }
+            else
+                scene.collide(c.bodyA, c.bodyB);
         }
     });
     world.add(renderer);
@@ -12419,16 +12367,13 @@ Physics(function (world) {
     // `.applyTo([])` to avoid direct dragging of objects
     world.add(Physics.behavior('interactive', { el: 'scene' }).applyTo([]));
     world.on('interact:poke', function (data) {
-        baits.add(data.x, data.y);
+        scene.click(data.x * viewWidth / renderer.el.clientWidth, data.y * viewHeight / renderer.el.clientHeight);
     });
-    /*world.on('beforeRender', function(data) {
-        baits.refreshViews();
-    });*/
     var oldTime = 0;
     Physics.util.ticker.on(function (time) {
         if (oldTime) {
             var dt = time - oldTime;
-            baits.decay(dt);
+            scene.tick(dt);
         }
         oldTime = time;
         world.step(time);
@@ -12436,6 +12381,136 @@ Physics(function (world) {
     // start the ticker
     Physics.util.ticker.start();
 });
+
+
+/***/ }),
+
+/***/ "./scenes/test.ts":
+/*!************************!*\
+  !*** ./scenes/test.ts ***!
+  \************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __read = (this && this.__read) || function (o, n) {
+    var m = typeof Symbol === "function" && o[Symbol.iterator];
+    if (!m) return o;
+    var i = m.call(o), r, ar = [], e;
+    try {
+        while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
+    }
+    catch (error) { e = { error: error }; }
+    finally {
+        try {
+            if (r && !r.done && (m = i["return"])) m.call(i);
+        }
+        finally { if (e) throw e.error; }
+    }
+    return ar;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+var Physics = __webpack_require__(/*! physicsjs */ "../node_modules/physicsjs/dist/physicsjs-full.js");
+var flock_1 = __webpack_require__(/*! ../entities/flock */ "./entities/flock.ts");
+var baits_1 = __webpack_require__(/*! ../entities/baits */ "./entities/baits.ts");
+var current_1 = __webpack_require__(/*! ../stage/current */ "./stage/current.ts");
+var source_1 = __webpack_require__(/*! ../stage/source */ "./stage/source.ts");
+var well_1 = __webpack_require__(/*! ../stage/well */ "./stage/well.ts");
+var Scene = /** @class */ (function () {
+    function Scene(world, viewWidth, viewHeight) {
+        this.world = world;
+        this.baits = null;
+        this.flock = null;
+        this.counterFlock = null;
+        this.source = null;
+        this.well = null;
+        this.ball = null;
+        this.wall = null;
+        var gap = 200;
+        var wallWidth = 10;
+        this.baits = new baits_1.default(world);
+        this.flock = new flock_1.default(world, 50, // nr of fish
+        6, // nr of neighbours considered
+        30, // Where does this fish feel comfortable distant from others
+        this.baits, function () { return ({
+            x: Math.random() * viewWidth - gap - wallWidth,
+            y: Math.random() * viewHeight,
+            angle: Math.random() * Math.PI * 2,
+            radius: 5,
+            velMax: .1,
+            styles: {
+                strokeStyle: 'hsla(60, 37%, 17%, 1)',
+                lineWidth: 1,
+                fillStyle: 'hsla(60, 37%, 57%, 0.8)',
+                angleIndicator: 'hsla(60, 37%, 17%, 0.4)'
+            },
+            visibility: 150
+        }); });
+        this.counterFlock = new flock_1.default(world, 20, // nr of fish
+        6, // nr of neighbours considered
+        50, // Where does this fish feel comfortable distant from others
+        null, function () { return ({
+            x: Math.random() * viewWidth,
+            y: Math.random() * viewHeight,
+            angle: Math.random() * Math.PI * 2,
+            radius: 10,
+            velMax: .15,
+            styles: {
+                strokeStyle: 'hsla(0, 37%, 17%, 1)',
+                lineWidth: 1,
+                fillStyle: 'hsla(0, 37%, 57%, 0.8)',
+                angleIndicator: 'hsla(0, 37%, 17%, 0.4)'
+            },
+            visibility: 150
+        }); });
+        current_1.default.add(this.source = new source_1.default(world, Physics.vector(100, 100), 300, .5));
+        current_1.default.add(this.well = new well_1.default(world, Physics.vector(400, 400), 300, .5));
+        this.ball = Physics.body('circle', {
+            x: 300, y: 300, radius: 50, mass: 50,
+            styles: {
+                strokeStyle: 'hsla(140, 37%, 17%, 1)',
+                lineWidth: 1,
+                fillStyle: 'hsla(140, 37%, 57%, 0.8)',
+            }
+        });
+        world.add(this.ball);
+        this.wall = Physics.body('rectangle', {
+            x: viewWidth - gap + wallWidth / 2, y: (viewHeight + gap) / 2,
+            width: wallWidth, height: viewHeight - gap,
+            treatment: 'static',
+            styles: {
+                strokeStyle: 'hsla(140, 0%, 17%, 1)',
+                lineWidth: 1,
+                fillStyle: 'hsla(140, 0%, 57%, 0.8)',
+            }
+        });
+        world.add(this.wall);
+    }
+    Scene.prototype.clear = function (world) {
+        this.flock.clear();
+        this.counterFlock.clear();
+        this.baits.clear();
+        this.world.remove(this.ball);
+        this.world.remove(this.wall);
+        current_1.default.clear(this.world);
+    };
+    Scene.prototype.click = function (x, y) {
+        this.baits.add(x, y);
+    };
+    Scene.prototype.collide = function (bA, bB) {
+        var _a;
+        if ('bait' === bA.name)
+            _a = __read([bB, bA], 2), bA = _a[0], bB = _a[1];
+        if ('fish' === bA.name && 'bait' === bB.name)
+            this.baits.remove(bB);
+    };
+    Scene.prototype.tick = function (dt) {
+        this.baits.decay(dt);
+    };
+    return Scene;
+}());
+exports.default = Scene;
+;
 
 
 /***/ }),
@@ -12465,50 +12540,45 @@ var currents = [];
 var indicatorInterract = 5; // Distance at which indicators interract with currents
 var avgLife = 5;
 var Current = /** @class */ (function () {
-    function Current() {
+    function Current(world) {
+        this.world = world;
+        this.indicatorInterract = indicatorInterract;
         this.emit = null;
         this.absorb = null;
     }
     Current.add = function (current) {
         currents.push(current);
     };
-    Current.clear = function () {
+    Current.clear = function (world) {
         currents.splice(0);
+        world.remove(world.find(Physics.query({ name: 'current-indicator' })));
+    };
+    Current.prototype.addIndicator = function () {
+        var scratch = Physics.scratchpad();
+        try {
+            var calc = scratch.vector();
+            var angle = Math.random() * Math.PI * 2;
+            calc.clone(this.position);
+            calc.add(this.indicatorInterract * Math.cos(angle), this.indicatorInterract * Math.sin(angle));
+            this.world.add(Physics.body('current-indicator', {
+                x: calc.x, y: calc.y, life: (1 + Math.random()) * avgLife
+            }));
+        }
+        catch (x) {
+            console.error(x);
+        }
+        finally {
+            scratch.done();
+        }
     };
     return Current;
 }());
 exports.default = Current;
-function addIndicator(world, center, radius) {
-    var scratch = Physics.scratchpad();
-    try {
-        var calc = scratch.vector();
-        var angle = Math.random() * Math.PI * 2;
-        calc.clone(center);
-        calc.add(radius * Math.cos(angle), radius * Math.sin(angle));
-        world.add(Physics.body('current-indicator', {
-            x: calc.x, y: calc.y, life: (1 + Math.random()) * avgLife
-        }));
-    }
-    catch (x) {
-        console.error(x);
-    }
-    finally {
-        scratch.done();
-    }
-}
 Physics.body('current-indicator', 'point', function (parent) {
-    return {
-    /*init: function(options){
-        parent.init.call(this, options);
-    }*/
-    };
+    return {};
 });
 Physics.behavior('currents', function (parent) {
     return {
-        /*init: function(options){
-            parent.init.call(this, options);
-            this.baits = option.baits;
-        },*/
         behave: function (data) {
             var e_1, _a, e_2, _b, e_3, _c, e_4, _d;
             var bodies = this.getTargets();
@@ -12530,7 +12600,7 @@ Physics.behavior('currents', function (parent) {
                                             calc.clone(current.absorb);
                                             calc.vsub(item.state.pos);
                                             if (calc.norm() < indicatorInterract) {
-                                                this._world.remove(item);
+                                                current.world.remove(item);
                                                 break;
                                             }
                                         }
@@ -12573,10 +12643,8 @@ Physics.behavior('currents', function (parent) {
                 try {
                     for (var currents_3 = __values(currents), currents_3_1 = currents_3.next(); !currents_3_1.done; currents_3_1 = currents_3.next()) {
                         var current = currents_3_1.value;
-                        if (current.emit && Math.random() < .2)
-                            addIndicator(this._world, current.emit, indicatorInterract);
-                        if (current.absorb && Math.random() < .2)
-                            addIndicator(this._world, current.absorb, current.radius - 1);
+                        if (Math.random() < .2)
+                            current.addIndicator();
                     }
                 }
                 catch (e_4_1) { e_4 = { error: e_4_1 }; }
@@ -12627,8 +12695,8 @@ var current_1 = __webpack_require__(/*! ./current */ "./stage/current.ts");
 var attenuation = 10; // To avoid 1/~0 infinite strength when near the center
 var Source = /** @class */ (function (_super) {
     __extends(Source, _super);
-    function Source(position, radius, strength) {
-        var _this = _super.call(this) || this;
+    function Source(world, position, radius, strength) {
+        var _this = _super.call(this, world) || this;
         _this.position = position;
         _this.radius = radius;
         _this.strength = strength;
@@ -12691,12 +12759,13 @@ var current_1 = __webpack_require__(/*! ./current */ "./stage/current.ts");
 var attenuation = 10; // To avoid 1/~0 infinite strength
 var Well = /** @class */ (function (_super) {
     __extends(Well, _super);
-    function Well(position, radius, strength) {
-        var _this = _super.call(this) || this;
+    function Well(world, position, radius, strength) {
+        var _this = _super.call(this, world) || this;
         _this.position = position;
         _this.radius = radius;
         _this.strength = strength;
         _this.absorb = position;
+        _this.indicatorInterract = radius - _this.indicatorInterract;
         return _this;
     }
     Well.prototype.exert = function (pos) {

@@ -73,7 +73,7 @@ Physics.body('fish', 'circle', function(parent) {
 					distance.clone(bait.state.pos);
 					distance.vsub(this.state.pos);
 					distance.normalize();
-					distance.mult(velMax*hunger);
+					distance.mult(velMax*hunger*(bait.strength||1));
 					temp.mult(1-hunger);
 					temp.vadd(distance);
 				}

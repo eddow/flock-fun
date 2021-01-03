@@ -32,6 +32,10 @@ export default class Baits {
 		this.world.remove(bait);
 		this.items.splice(ndx, 1);
 	}
+	clear() {
+		this.world.remove(this.items);
+		this.items.splice(0);
+	}
 	decay(dt: number) {
 		let baits = this.items;
 		for(let i=0; i<baits.length;) {

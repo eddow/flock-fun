@@ -4,9 +4,10 @@ import Current from './current'
 const attenuation = 10;	// To avoid 1/~0 infinite strength
 
 export default class Well extends Current {
-	constructor(public position: Physics.vector, public radius: number, public strength: number) {
-		super();
+	constructor(world: Physics.world, public position: Physics.vector, public radius: number, public strength: number) {
+		super(world);
 		this.absorb = position;
+		this.indicatorInterract = radius-this.indicatorInterract;
 	}
 	exert(pos: Physics.vector): Physics.vector {
 		var scratch = Physics.scratchpad();

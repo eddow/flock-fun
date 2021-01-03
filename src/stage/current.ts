@@ -5,49 +5,47 @@ const indicatorInterract = 5;	// Distance at which indicators interract with cur
 const avgLife = 5;
 
 export default abstract class Current {
-	abstract exert(pos: Physics.vector): Physics.vector;
+	constructor(public world: Physics.world) {}
+	abstract exert(pos: Physics.vector): Physics.vector
+	position: Physics.vector
+	radius: number
+	indicatorInterract: number = indicatorInterract
 	emit: Physics.vector = null
 	absorb: Physics.vector = null
 	static add(current: Current): void {
 		currents.push(current);
 	}
-	static clear(): void {
+	static clear(world: Physics.World): void {
 		currents.splice(0);
+		world.remove(world.find(Physics.query({name: 'current-indicator'})));
 	}
-}
 
-function addIndicator(world: any, center: Physics.vector, radius: number) {
-	var scratch = Physics.scratchpad();
-	try {
-		let calc = scratch.vector();
-		let angle = Math.random() * Math.PI * 2;
-		calc.clone(center);
-		calc.add(radius*Math.cos(angle), radius*Math.sin(angle));
-		world.add(
-			Physics.body('current-indicator', {
-				x: calc.x, y: calc.y, life: (1+Math.random()) * avgLife
-			}));
-	} catch(x) {
-		console.error(x);
-	} finally {
-		scratch.done();
+	addIndicator() {
+		var scratch = Physics.scratchpad();
+		try {
+			let calc = scratch.vector();
+			let angle = Math.random() * Math.PI * 2;
+			calc.clone(this.position);
+			calc.add(this.indicatorInterract*Math.cos(angle), this.indicatorInterract*Math.sin(angle));
+			this.world.add(
+				Physics.body('current-indicator', {
+					x: calc.x, y: calc.y, life: (1+Math.random()) * avgLife
+				}));
+		} catch(x) {
+			console.error(x);
+		} finally {
+			scratch.done();
+		}
 	}
 }
 
 Physics.body('current-indicator', 'point', function(parent) {
 	return {
-		/*init: function(options){
-			parent.init.call(this, options);
-		}*/
 	};
 });
 
 Physics.behavior('currents', function(parent) {
     return {
-		/*init: function(options){
-			parent.init.call(this, options);
-			this.baits = option.baits;
-		},*/
         behave: function(data) {
             var bodies = this.getTargets();
 			
@@ -64,11 +62,11 @@ Physics.behavior('currents', function(parent) {
 								calc.clone(current.absorb);
 								calc.vsub(item.state.pos);
 								if(calc.norm() < indicatorInterract) {
-									this._world.remove(item);
+									current.world.remove(item);
 									break;
 								}
 							}
-							item.state.vel.vadd(current.exert(item.state.pos))
+							item.state.vel.vadd(current.exert(item.state.pos));
 						}
 					} else {
 						item.state.acc.zero();
@@ -77,12 +75,9 @@ Physics.behavior('currents', function(parent) {
 						}
 					}
 				}
-				for(let current of currents) {
-					if(current.emit && Math.random() < .2)
-						addIndicator(this._world, current.emit, indicatorInterract);
-					if(current.absorb && Math.random() < .2)
-						addIndicator(this._world, current.absorb, current.radius-1);
-				}
+				for(let current of currents)
+					if(Math.random() < .2)
+						current.addIndicator();
 			} catch(x) {
 				console.error(x);
 			} finally {

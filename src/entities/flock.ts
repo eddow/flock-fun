@@ -5,7 +5,7 @@ import Baits from './baits'
 export default class Flock {
 	items: any[]
 	behavior: any
-	constructor(world: any,
+	constructor(public world: any,
 		number: number,
 		nearest: number,
 		comfortDistance: number,
@@ -17,13 +17,17 @@ export default class Flock {
 		for(let i=0; i<number; ++i) {
 			let fish = Physics.body('fish', opts(i));
 			this.items.push(fish);
-			world.add(fish);
 		}
+		world.add(this.items);
 		world.add(this.behavior = Physics.behavior('flock', {
 			nearest,
 			baits,
 			comfortDistance
 		}).applyTo(this.items));
+	}
+	clear() {
+		this.world.remove(this.items);
+		this.world.remove(this.behavior);
 	}
 }
 
