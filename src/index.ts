@@ -1,6 +1,6 @@
 import {Engine, Render, World, Runner, Bodies, Events} from 'matter-js'
 import {Scene} from './scenes/scene'
-import EmptyScene from './scenes/empty'
+import BaseScene from './scenes/base'
 import TestScene from './scenes/test'
 
 // Estimation of ~16:9
@@ -27,7 +27,10 @@ const viewWidth = 1536,
 		}
 	}),
 	engine = Engine.create({world}),
-	scene: Scene = new TestScene(world, viewWidth, viewHeight),
+	scene: Scene = new TestScene(world, {
+		min: {x: 0, y: 0},
+		max: {x: viewWidth, y: viewHeight}
+	}),
 	render = Render.create({
 		element: document.body,
 		engine: engine,
@@ -43,9 +46,8 @@ const runner = Runner.create();
 World.add(engine.world, walls);
 
 Events.on(engine, 'collisionStart', function(event) {
-	for (var pair of event.pairs) {
+	for (var pair of event.pairs)
 		scene.collide(pair.bodyA, pair.bodyB);
-	}
 });
 render.canvas.addEventListener('mouseup', function(event) {
 	scene.click(

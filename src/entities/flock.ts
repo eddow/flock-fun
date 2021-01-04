@@ -62,6 +62,21 @@ export default class Flock {
 				dt);
 		}
 	}
+	setColor(R: string|number|any, G?: number, B?: number) {
+		let color: string;
+		switch(typeof R) {
+		case 'string':
+			color = <string>R;
+			break;
+		case 'number':
+			R = {R, G, B};
+		case 'object':
+			color = `rgb(${R.R},${R.G},${R.B})`;
+			break
+		}
+		for(let fish of this.items)
+			fish.render.fillStyle = color;
+	}
 	static collideBait(bA: any, bB: any) {
 		if('Bait'=== bA.label) [bA, bB] = [bB, bA];
 		if('Fish'=== bA.label && 'Bait'=== bB.label && bA.flock.baits)

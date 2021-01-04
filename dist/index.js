@@ -11849,8 +11849,35 @@ var Flock = /** @class */ (function () {
             finally { if (e_1) throw e_1.error; }
         }
     };
+    Flock.prototype.setColor = function (R, G, B) {
+        var e_5, _a;
+        var color;
+        switch (typeof R) {
+            case 'string':
+                color = R;
+                break;
+            case 'number':
+                R = { R: R, G: G, B: B };
+            case 'object':
+                color = "rgb(" + R.R + "," + R.G + "," + R.B + ")";
+                break;
+        }
+        try {
+            for (var _b = __values(this.items), _c = _b.next(); !_c.done; _c = _b.next()) {
+                var fish = _c.value;
+                fish.render.fillStyle = color;
+            }
+        }
+        catch (e_5_1) { e_5 = { error: e_5_1 }; }
+        finally {
+            try {
+                if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
+            }
+            finally { if (e_5) throw e_5.error; }
+        }
+    };
     Flock.collideBait = function (bA, bB) {
-        var _a, e_5, _b;
+        var _a, e_6, _b;
         if ('Bait' === bA.label)
             _a = __read([bB, bA], 2), bA = _a[0], bB = _a[1];
         if ('Fish' === bA.label && 'Bait' === bB.label && bA.flock.baits)
@@ -11863,12 +11890,12 @@ var Flock = /** @class */ (function () {
                     }
                 }
             }
-            catch (e_5_1) { e_5 = { error: e_5_1 }; }
+            catch (e_6_1) { e_6 = { error: e_6_1 }; }
             finally {
                 try {
                     if (_d && !_d.done && (_b = _c.return)) _b.call(_c);
                 }
-                finally { if (e_5) throw e_5.error; }
+                finally { if (e_6) throw e_6.error; }
             }
         return false;
     };
@@ -11931,7 +11958,10 @@ var viewWidth = 1536, viewHeight = 755, wallThick = 50, wallOptions = {
         min: { x: 0, y: 0 },
         max: { x: viewWidth, y: viewHeight }
     }
-}), engine = matter_js_1.Engine.create({ world: world }), scene = new test_1.default(world, viewWidth, viewHeight), render = matter_js_1.Render.create({
+}), engine = matter_js_1.Engine.create({ world: world }), scene = new test_1.default(world, {
+    min: { x: 0, y: 0 },
+    max: { x: viewWidth, y: viewHeight }
+}), render = matter_js_1.Render.create({
     element: document.body,
     engine: engine,
     options: {
@@ -11970,51 +12000,134 @@ matter_js_1.Render.run(render);
 
 /***/ }),
 
-/***/ "./scenes/test.ts":
+/***/ "./scenes/base.ts":
 /*!************************!*\
-  !*** ./scenes/test.ts ***!
+  !*** ./scenes/base.ts ***!
   \************************/
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-var matter_js_1 = __webpack_require__(/*! matter-js */ "../node_modules/matter-js/build/matter.js");
+var scene_1 = __webpack_require__(/*! ./scene */ "./scenes/scene.ts");
+var current_1 = __webpack_require__(/*! ../stage/current */ "./stage/current.ts");
 var flock_1 = __webpack_require__(/*! ../entities/flock */ "./entities/flock.ts");
 var carrotNstick_1 = __webpack_require__(/*! ../entities/carrotNstick */ "./entities/carrotNstick.ts");
-var current_1 = __webpack_require__(/*! ../stage/current */ "./stage/current.ts");
-var source_1 = __webpack_require__(/*! ../stage/source */ "./stage/source.ts");
-var well_1 = __webpack_require__(/*! ../stage/well */ "./stage/well.ts");
-var gap = 200;
-var wallWidth = 10;
-var TestScene = /** @class */ (function () {
-    function TestScene(world, viewWidth, viewHeight) {
+var temperature_1 = __webpack_require__(/*! ../stage/temperature */ "./stage/temperature.ts");
+var BaseScene = /** @class */ (function () {
+    function BaseScene(world, spawn) {
         this.world = world;
-        this.cns = null;
-        this.flock = null;
-        this.counterFlock = null;
-        this.source = null;
-        this.well = null;
-        this.ball = null;
-        this.wall = null;
         this.cns = new carrotNstick_1.default(world);
         this.flock = new flock_1.default({
             world: world,
             number: 50,
             neighbours: 6,
-            comfortDistance: 30,
+            comfortDistance: 50,
             baits: this.cns.baits,
             radius: 10,
             velocity: 2,
             color: 'green',
             visibility: 200
-        }, function () { return ({
-            x: Math.random() * viewWidth - gap - wallWidth,
-            y: Math.random() * viewHeight,
-            angle: Math.random() * Math.PI * 2,
-            restitution: 1
-        }); });
-        this.counterFlock = new flock_1.default({
+        }, function () { return scene_1.randFish(spawn); });
+        this.temperature = new temperature_1.default(this.flock, {
+            hot: { R: 0, G: 0xc0, B: 0 },
+            cold: { R: 0x40, G: 0xff, B: 0xc0 }
+        }, {
+            hot: 6,
+            cold: 24
+        }, 30000);
+    }
+    BaseScene.prototype.clear = function () {
+        this.flock.clear();
+        this.cns.clear();
+        this.temperature.clear();
+    };
+    BaseScene.prototype.click = function (x, y, button) {
+        this.cns.click(x, y, button);
+        this.temperature.click(x, y, button);
+    };
+    BaseScene.prototype.collide = function (bA, bB) {
+        current_1.default.collideIndicator(bA) ||
+            current_1.default.collideIndicator(bB) ||
+            flock_1.default.collideBait(bA, bB);
+    };
+    BaseScene.prototype.tick = function (dt) {
+        this.cns.tick(dt);
+        this.flock.tick(dt);
+        this.temperature.tick(dt);
+    };
+    return BaseScene;
+}());
+exports.default = BaseScene;
+;
+
+
+/***/ }),
+
+/***/ "./scenes/scene.ts":
+/*!*************************!*\
+  !*** ./scenes/scene.ts ***!
+  \*************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.randFish = exports.rangeRand = void 0;
+function rangeRand(min, max) {
+    return Math.random() * (max - min) + min;
+}
+exports.rangeRand = rangeRand;
+function randFish(spawn, complement) {
+    if (complement === void 0) { complement = { restitution: 1 }; }
+    return Object.assign({
+        x: rangeRand(spawn.min.x, spawn.max.x),
+        y: rangeRand(spawn.min.x, spawn.max.y),
+        angle: Math.random() * Math.PI * 2
+    }, complement);
+}
+exports.randFish = randFish;
+
+
+/***/ }),
+
+/***/ "./scenes/test.ts":
+/*!************************!*\
+  !*** ./scenes/test.ts ***!
+  \************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+var matter_js_1 = __webpack_require__(/*! matter-js */ "../node_modules/matter-js/build/matter.js");
+var scene_1 = __webpack_require__(/*! ./scene */ "./scenes/scene.ts");
+var base_1 = __webpack_require__(/*! ./base */ "./scenes/base.ts");
+var flock_1 = __webpack_require__(/*! ../entities/flock */ "./entities/flock.ts");
+var source_1 = __webpack_require__(/*! ../stage/source */ "./stage/source.ts");
+var well_1 = __webpack_require__(/*! ../stage/well */ "./stage/well.ts");
+var gap = 200;
+var wallWidth = 10;
+var TestScene = /** @class */ (function (_super) {
+    __extends(TestScene, _super);
+    function TestScene(world, spawn) {
+        var _this = this;
+        spawn.max.x -= gap + wallWidth;
+        _this = _super.call(this, world, spawn) || this;
+        _this.counterFlock = new flock_1.default({
             world: world,
             number: 20,
             neighbours: 6,
@@ -12023,13 +12136,8 @@ var TestScene = /** @class */ (function () {
             velocity: 3,
             color: 'red',
             visibility: 200
-        }, function () { return ({
-            x: Math.random() * viewWidth - gap - wallWidth,
-            y: Math.random() * viewHeight,
-            angle: Math.random() * Math.PI * 2,
-            restitution: 1
-        }); });
-        matter_js_1.World.add(world, this.ball = matter_js_1.Bodies.circle(300, 300, 50, {
+        }, function () { return scene_1.randFish(spawn); });
+        matter_js_1.World.add(world, _this.ball = matter_js_1.Bodies.circle(300, 300, 50, {
             render: {
                 fillStyle: 'blue'
             },
@@ -12037,42 +12145,33 @@ var TestScene = /** @class */ (function () {
             frictionAir: 0,
             mass: 50
         }));
-        matter_js_1.World.add(world, this.wall = matter_js_1.Bodies.rectangle(viewWidth - gap + wallWidth / 2, (viewHeight + gap) / 2, wallWidth, viewHeight - gap, {
+        matter_js_1.World.add(world, _this.wall = matter_js_1.Bodies.rectangle(spawn.max.x + wallWidth / 2, (spawn.max.y + gap) / 2, wallWidth, spawn.max.y - gap, {
             render: {
                 fillStyle: 'grey'
             },
             label: 'Wall',
             isStatic: true
         }));
-        this.source = new source_1.default(world, matter_js_1.Vector.create(100, 100), 300, .05);
-        this.well = new well_1.default(world, matter_js_1.Vector.create(400, 400), 300, .05);
+        _this.source = new source_1.default(world, matter_js_1.Vector.create(100, 100), 300, .05);
+        _this.well = new well_1.default(world, matter_js_1.Vector.create(400, 400), 300, .05);
+        return _this;
     }
     TestScene.prototype.clear = function () {
-        this.flock.clear();
+        _super.prototype.clear.call(this);
         this.counterFlock.clear();
-        this.cns.clear();
         matter_js_1.World.remove(this.world, this.ball);
         matter_js_1.World.remove(this.world, this.wall);
         this.source.clear();
         this.well.clear();
     };
-    TestScene.prototype.click = function (x, y, button) {
-        this.cns.click(x, y, button);
-    };
-    TestScene.prototype.collide = function (bA, bB) {
-        current_1.default.collideIndicator(bA) ||
-            current_1.default.collideIndicator(bB) ||
-            flock_1.default.collideBait(bA, bB);
-    };
     TestScene.prototype.tick = function (dt) {
-        this.cns.tick(dt);
-        this.flock.tick(dt);
+        _super.prototype.tick.call(this, dt);
         this.counterFlock.tick(dt);
         this.source.tick(dt);
         this.well.tick(dt);
     };
     return TestScene;
-}());
+}(base_1.default));
 exports.default = TestScene;
 ;
 
@@ -12223,6 +12322,57 @@ var Source = /** @class */ (function (_super) {
     return Source;
 }(current_1.default));
 exports.default = Source;
+
+
+/***/ }),
+
+/***/ "./stage/temperature.ts":
+/*!******************************!*\
+  !*** ./stage/temperature.ts ***!
+  \******************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+function interpolate(values, temp) {
+    return Math.round(values.cold * temp + values.hot * (1 - temp));
+}
+var Temperature = /** @class */ (function () {
+    function Temperature(flock, colors, neighbours, duration //milliseconds
+    ) {
+        this.flock = flock;
+        this.neighbours = neighbours;
+        this.duration = duration;
+        this.state = 0;
+        this.colors = { R: null, G: null, B: null };
+        for (var c in this.colors)
+            this.colors[c] = {
+                cold: colors.cold[c],
+                hot: colors.hot[c],
+            };
+        this.flock.setColor(colors.hot);
+    }
+    Temperature.prototype.tick = function (dt) {
+        if (this.state > 0) {
+            this.state = Math.max(this.state - dt, 0);
+            var temp = this.state / this.duration;
+            var color = { R: null, G: null, B: null };
+            for (var c in color)
+                color[c] = interpolate(this.colors[c], temp);
+            var neighbours = interpolate(this.neighbours, temp);
+            this.flock.setColor(color);
+            this.flock.options.neighbours = neighbours;
+        }
+    };
+    Temperature.prototype.click = function (x, y, button) {
+        if (1 === button && 0 === this.state)
+            this.state = this.duration;
+    };
+    Temperature.prototype.clear = function () { };
+    return Temperature;
+}());
+exports.default = Temperature;
 
 
 /***/ }),

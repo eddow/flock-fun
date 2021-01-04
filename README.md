@@ -11,6 +11,7 @@ Open `dist/index.html`
 
 Control:
 ```
-left click for attraction bait
-right click for fear bait
+left click for carrot
+right click for stick
+wheel click for cold (30s)
 ```
