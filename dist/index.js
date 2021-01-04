@@ -11648,14 +11648,17 @@ var fishPrototype = {
         console.assert(!isNaN(pos.x) && !isNaN(pos.y));
         if (!neighbours.length) {
             // TODO: better random seek
+            /*Body.setAngularVelocity(this, this.angularVelocity + (Math.random()-.5)*angleVelMax);
+            let angle = this.angle;*/
             var angle = matter_js_1.Vector.angle({ x: 0, y: 0 }, this.velocity) +
                 (Math.random() - .5) * angleVelMax * 2;
-            Object.assign(direction, { x: Math.cos(angle) * velMax, y: Math.sin(angle) * velMax });
+            Object.assign(direction, { x: Math.sin(angle) * velMax, y: Math.cos(angle) * velMax });
         }
         else
             try {
                 for (var neighbours_1 = __values(neighbours), neighbours_1_1 = neighbours_1.next(); !neighbours_1_1.done; neighbours_1_1 = neighbours_1.next()) {
                     var n = neighbours_1_1.value;
+                    this.angleVelocity = 0;
                     matter_js_1.Vector.add(direction, matter_js_1.Vector.mult(matter_js_1.Vector.normalise(matter_js_1.Vector.sub(pos, n.fish.position)), n.dist < comfortDistance ?
                         comfortDistance / n.dist :
                         -n.dist / comfortDistance), direction);
@@ -11919,6 +11922,28 @@ function findSortIndex(nrs, ins) {
 
 /***/ }),
 
+/***/ "./entities/index.ts":
+/*!***************************!*\
+  !*** ./entities/index.ts ***!
+  \***************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Flock = exports.Fish = exports.CNS = exports.Baits = void 0;
+var baits_1 = __webpack_require__(/*! ./baits */ "./entities/baits.ts");
+exports.Baits = baits_1.default;
+var carrotNstick_1 = __webpack_require__(/*! ./carrotNstick */ "./entities/carrotNstick.ts");
+exports.CNS = carrotNstick_1.default;
+var fish_1 = __webpack_require__(/*! ./fish */ "./entities/fish.ts");
+exports.Fish = fish_1.default;
+var flock_1 = __webpack_require__(/*! ./flock */ "./entities/flock.ts");
+exports.Flock = flock_1.default;
+
+
+/***/ }),
+
 /***/ "./index.ts":
 /*!******************!*\
   !*** ./index.ts ***!
@@ -12010,15 +12035,13 @@ matter_js_1.Render.run(render);
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 var scene_1 = __webpack_require__(/*! ./scene */ "./scenes/scene.ts");
-var current_1 = __webpack_require__(/*! ../stage/current */ "./stage/current.ts");
-var flock_1 = __webpack_require__(/*! ../entities/flock */ "./entities/flock.ts");
-var carrotNstick_1 = __webpack_require__(/*! ../entities/carrotNstick */ "./entities/carrotNstick.ts");
-var temperature_1 = __webpack_require__(/*! ../stage/temperature */ "./stage/temperature.ts");
+var entities_1 = __webpack_require__(/*! ../entities */ "./entities/index.ts");
+var stage_1 = __webpack_require__(/*! ../stage */ "./stage/index.ts");
 var BaseScene = /** @class */ (function () {
     function BaseScene(world, spawn) {
         this.world = world;
-        this.cns = new carrotNstick_1.default(world);
-        this.flock = new flock_1.default({
+        this.cns = new entities_1.CNS(world);
+        this.flock = new entities_1.Flock({
             world: world,
             number: 50,
             neighbours: 6,
@@ -12026,10 +12049,10 @@ var BaseScene = /** @class */ (function () {
             baits: this.cns.baits,
             radius: 10,
             velocity: 2,
-            color: 'green',
+            //color: 'green',	//Temperature-controlled
             visibility: 200
         }, function () { return scene_1.randFish(spawn); });
-        this.temperature = new temperature_1.default(this.flock, {
+        this.temperature = new stage_1.Temperature(this.flock, {
             hot: { R: 0, G: 0xc0, B: 0 },
             cold: { R: 0x40, G: 0xff, B: 0xc0 }
         }, {
@@ -12047,9 +12070,9 @@ var BaseScene = /** @class */ (function () {
         this.temperature.click(x, y, button);
     };
     BaseScene.prototype.collide = function (bA, bB) {
-        current_1.default.collideIndicator(bA) ||
-            current_1.default.collideIndicator(bB) ||
-            flock_1.default.collideBait(bA, bB);
+        stage_1.Current.collideIndicator(bA) ||
+            stage_1.Current.collideIndicator(bB) ||
+            entities_1.Flock.collideBait(bA, bB);
     };
     BaseScene.prototype.tick = function (dt) {
         this.cns.tick(dt);
@@ -12116,9 +12139,8 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 var matter_js_1 = __webpack_require__(/*! matter-js */ "../node_modules/matter-js/build/matter.js");
 var scene_1 = __webpack_require__(/*! ./scene */ "./scenes/scene.ts");
 var base_1 = __webpack_require__(/*! ./base */ "./scenes/base.ts");
-var flock_1 = __webpack_require__(/*! ../entities/flock */ "./entities/flock.ts");
-var source_1 = __webpack_require__(/*! ../stage/source */ "./stage/source.ts");
-var well_1 = __webpack_require__(/*! ../stage/well */ "./stage/well.ts");
+var entities_1 = __webpack_require__(/*! ../entities */ "./entities/index.ts");
+var stage_1 = __webpack_require__(/*! ../stage */ "./stage/index.ts");
 var gap = 200;
 var wallWidth = 10;
 var TestScene = /** @class */ (function (_super) {
@@ -12127,7 +12149,7 @@ var TestScene = /** @class */ (function (_super) {
         var _this = this;
         spawn.max.x -= gap + wallWidth;
         _this = _super.call(this, world, spawn) || this;
-        _this.counterFlock = new flock_1.default({
+        _this.counterFlock = new entities_1.Flock({
             world: world,
             number: 20,
             neighbours: 6,
@@ -12152,8 +12174,13 @@ var TestScene = /** @class */ (function (_super) {
             label: 'Wall',
             isStatic: true
         }));
-        _this.source = new source_1.default(world, matter_js_1.Vector.create(100, 100), 300, .05);
-        _this.well = new well_1.default(world, matter_js_1.Vector.create(400, 400), 300, .05);
+        _this.source = new stage_1.Source(world, matter_js_1.Vector.create(spawn.max.x + gap / 2, gap / 2), gap / Math.sqrt(2), .05);
+        var goal = {
+            position: matter_js_1.Vector.create(spawn.max.x + wallWidth + gap / 2, spawn.max.y - gap / 2),
+            radius: gap / 2
+        };
+        _this.well = new stage_1.Well(world, goal.position, goal.radius, .05);
+        _this.counter = new stage_1.Counter(_this.flock, goal.position, goal.radius, 40, '#0c02');
         return _this;
     }
     TestScene.prototype.clear = function () {
@@ -12163,17 +12190,86 @@ var TestScene = /** @class */ (function (_super) {
         matter_js_1.World.remove(this.world, this.wall);
         this.source.clear();
         this.well.clear();
+        this.counter.clear();
     };
     TestScene.prototype.tick = function (dt) {
         _super.prototype.tick.call(this, dt);
         this.counterFlock.tick(dt);
         this.source.tick(dt);
         this.well.tick(dt);
+        this.counter.tick(dt);
     };
     return TestScene;
 }(base_1.default));
 exports.default = TestScene;
 ;
+
+
+/***/ }),
+
+/***/ "./stage/counter.ts":
+/*!**************************!*\
+  !*** ./stage/counter.ts ***!
+  \**************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __values = (this && this.__values) || function(o) {
+    var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
+    if (m) return m.call(o);
+    if (o && typeof o.length === "number") return {
+        next: function () {
+            if (o && i >= o.length) o = void 0;
+            return { value: o && o[i++], done: !o };
+        }
+    };
+    throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+var matter_js_1 = __webpack_require__(/*! matter-js */ "../node_modules/matter-js/build/matter.js");
+var Counter = /** @class */ (function () {
+    function Counter(flock, position, radius, expected, color) {
+        this.flock = flock;
+        this.position = position;
+        this.radius = radius;
+        this.expected = expected;
+        this.color = color;
+        this.achieved = false;
+        matter_js_1.World.add(flock.options.world, this.body = matter_js_1.Bodies.circle(position.x, position.y, radius, {
+            label: 'Counter',
+            isSensor: true,
+            render: {
+                fillStyle: color
+            }
+        }));
+    }
+    Counter.prototype.tick = function (dt) {
+        var e_1, _a;
+        var cpt = 0;
+        try {
+            for (var _b = __values(this.flock.items), _c = _b.next(); !_c.done; _c = _b.next()) {
+                var fish = _c.value;
+                if (matter_js_1.Vector.magnitude(matter_js_1.Vector.sub(this.position, fish.position)) < this.radius)
+                    ++cpt;
+            }
+        }
+        catch (e_1_1) { e_1 = { error: e_1_1 }; }
+        finally {
+            try {
+                if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
+            }
+            finally { if (e_1) throw e_1.error; }
+        }
+        // TODO: render text
+        document.title = '' + cpt;
+    };
+    Counter.prototype.clear = function () {
+        matter_js_1.World.remove(this.body);
+    };
+    return Counter;
+}());
+exports.default = Counter;
 
 
 /***/ }),
@@ -12273,6 +12369,30 @@ var Current = /** @class */ (function () {
     return Current;
 }());
 exports.default = Current;
+
+
+/***/ }),
+
+/***/ "./stage/index.ts":
+/*!************************!*\
+  !*** ./stage/index.ts ***!
+  \************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Temperature = exports.Well = exports.Source = exports.Current = exports.Counter = void 0;
+var counter_1 = __webpack_require__(/*! ./counter */ "./stage/counter.ts");
+exports.Counter = counter_1.default;
+var current_1 = __webpack_require__(/*! ./current */ "./stage/current.ts");
+exports.Current = current_1.default;
+var source_1 = __webpack_require__(/*! ./source */ "./stage/source.ts");
+exports.Source = source_1.default;
+var well_1 = __webpack_require__(/*! ./well */ "./stage/well.ts");
+exports.Well = well_1.default;
+var temperature_1 = __webpack_require__(/*! ./temperature */ "./stage/temperature.ts");
+exports.Temperature = temperature_1.default;
 
 
 /***/ }),

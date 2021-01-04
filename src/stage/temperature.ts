@@ -1,4 +1,4 @@
-import Flock from '../entities/flock'
+import {Flock} from '../entities'
 
 export interface Gradient<T = number> {
 	hot: T;

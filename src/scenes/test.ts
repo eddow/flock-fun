@@ -1,10 +1,8 @@
 import {World, Body, Bodies, Vector} from 'matter-js'
 import {Scene, MinMax, randFish} from './scene'
 import BaseScene from './base'
-import Flock from '../entities/flock'
-import CNS from '../entities/carrotNstick'
-import Source from '../stage/source'
-import Well from '../stage/well'
+import {Flock, CNS} from '../entities'
+import {Source, Well, Counter} from '../stage'
 
 const gap = 200;
 const wallWidth = 10;
@@ -15,6 +13,7 @@ export default class TestScene extends BaseScene {
 	well: Well
 	ball: Body
 	wall: Body
+	counter: Counter
 	constructor(world: World, spawn: MinMax<Vector>) {
 		spawn.max.x -= gap + wallWidth;
 		super(world, spawn);
@@ -46,8 +45,13 @@ export default class TestScene extends BaseScene {
 				label: 'Wall',
 				isStatic: true
 			}));
-		this.source = new Source(world, Vector.create(100, 100), 300, .05);
-		this.well = new Well(world, Vector.create(400, 400), 300, .05);
+		this.source = new Source(world, Vector.create(spawn.max.x+gap/2, gap/2), gap/Math.sqrt(2), .05);
+		let goal = {
+			position: Vector.create(spawn.max.x+wallWidth+gap/2, spawn.max.y-gap/2),
+			radius: gap/2
+		}
+		this.well = new Well(world, goal.position, goal.radius, .05);
+		this.counter = new Counter(this.flock, goal.position, goal.radius, 40, '#0c02');
 	}
 	clear() {
 		super.clear();
@@ -56,11 +60,13 @@ export default class TestScene extends BaseScene {
 		World.remove(this.world, this.wall);
 		this.source.clear();
 		this.well.clear();
+		this.counter.clear();
 	}
 	tick(dt: number) {
 		super.tick(dt);
 		this.counterFlock.tick(dt);
 		this.source.tick(dt);
 		this.well.tick(dt);
+		this.counter.tick(dt);
 	}
 };

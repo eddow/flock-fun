@@ -1,9 +1,7 @@
 import {World, Vector} from 'matter-js'
 import {Scene, MinMax, randFish} from './scene'
-import Current from '../stage/current'
-import Flock from '../entities/flock'
-import CNS from '../entities/carrotNstick'
-import Temperature from '../stage/temperature'
+import {Flock, CNS} from '../entities'
+import {Current, Temperature} from '../stage'
 
 export default class BaseScene implements Scene {
 	cns: CNS
@@ -21,7 +19,7 @@ export default class BaseScene implements Scene {
 			baits: this.cns.baits,
 			radius: 10,
 			velocity: 2,
-			color: 'green',
+			//color: 'green',	//Temperature-controlled
 			visibility: 200
 		},
 		()=> randFish(spawn)

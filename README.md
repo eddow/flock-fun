@@ -7,7 +7,7 @@ npm run build
 
 Open `dist/index.html`
 
-> [Demo](https://rawcdn.githack.com/eddow/flock-fun/main/dist/index.html)
+> [Demo](https://gitcdn.link/repo/eddow/flock-fun/main/dist/index.html)
 
 Control:
 ```

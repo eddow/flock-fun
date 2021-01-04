@@ -35,10 +35,14 @@ const fishPrototype = {
 		console.assert(!isNaN(pos.x) && !isNaN(pos.y));
 		if(!neighbours.length) {
 			// TODO: better random seek
+
+			/*Body.setAngularVelocity(this, this.angularVelocity + (Math.random()-.5)*angleVelMax);
+			let angle = this.angle;*/
 			let angle = Vector.angle({x:0, y:0}, this.velocity) +
 				(Math.random()-.5)*angleVelMax*2;
-			Object.assign(direction, {x: Math.cos(angle)*velMax, y: Math.sin(angle)*velMax});
+			Object.assign(direction, {x: Math.sin(angle)*velMax, y: Math.cos(angle)*velMax});
 		} else for(let n of neighbours) {
+			this.angleVelocity = 0;
 			Vector.add(
 				direction,
 				Vector.mult(

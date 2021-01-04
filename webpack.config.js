@@ -17,7 +17,7 @@ module.exports = {
 		new HtmlWebpackPlugin({
 			template: 'index.ejs',
 			favicon: 'favicon.ico',
-			title: 'herd - test'
+			title: 'flock-fun'
 		})
 	],
 	devtool: 'source-map',
