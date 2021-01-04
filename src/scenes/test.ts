@@ -1,7 +1,7 @@
 import {World, Body, Bodies, Vector} from 'matter-js'
 import {Scene} from './scene'
 import Flock from '../entities/flock'
-import Baits from '../entities/baits'
+import CNS from '../entities/carrotNstick'
 import Current from '../stage/current'
 import Source from '../stage/source'
 import Well from '../stage/well'
@@ -10,7 +10,7 @@ const gap = 200;
 const wallWidth = 10;
 
 export default class TestScene implements Scene {
-	baits: Baits[] = null
+	cns: CNS = null
 	flock: Flock = null
 	counterFlock: Flock = null
 	source: Source = null
@@ -18,13 +18,13 @@ export default class TestScene implements Scene {
 	ball: Body = null
 	wall: Body = null
 	constructor(public world: World, viewWidth: number, viewHeight: number) {
-		this.baits = [new Baits(world), new Baits(world, 'pink', -1)];
+		this.cns = new CNS(world);
 		this.flock = new Flock({
 			world,
 			number: 50,	// nr of fish
 			neighbours: 6,	// nr of neighbours considered
 			comfortDistance: 30, // Where does this fish feel comfortable distant from others
-			baits: this.baits,
+			baits: this.cns.baits,
 			radius: 10,
 			velocity: 2,
 			color: 'green',
@@ -75,17 +75,14 @@ export default class TestScene implements Scene {
 	clear() {
 		this.flock.clear();
 		this.counterFlock.clear();
-		this.baits.forEach((b: any)=> b.clear());
+		this.cns.clear();
 		World.remove(this.world, this.ball);
 		World.remove(this.world, this.wall);
 		this.source.clear();
 		this.well.clear();
 	}
 	click(x: number, y: number, button: number) {
-		const baitNdx = [0, -1, 1];
-		let ndx = baitNdx[button];
-		if(~ndx)
-			this.baits[ndx].add(x, y);
+		this.cns.click(x, y, button);
 	}
 	collide(bA: any, bB: any) {
 		Current.collideIndicator(bA) ||
@@ -93,7 +90,7 @@ export default class TestScene implements Scene {
 		Flock.collideBait(bA, bB);
 	}
 	tick(dt: number) {
-		this.baits.forEach((b: any)=> b.tick(dt));
+		this.cns.tick(dt);
 		this.flock.tick(dt);
 		this.counterFlock.tick(dt);
 		this.source.tick(dt);

@@ -11560,6 +11560,44 @@ exports.default = Baits;
 
 /***/ }),
 
+/***/ "./entities/carrotNstick.ts":
+/*!**********************************!*\
+  !*** ./entities/carrotNstick.ts ***!
+  \**********************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+var baits_1 = __webpack_require__(/*! ./baits */ "./entities/baits.ts");
+var CNS = /** @class */ (function () {
+    function CNS(world, carrotColor, stickColor) {
+        if (carrotColor === void 0) { carrotColor = 'orange'; }
+        if (stickColor === void 0) { stickColor = 'brown'; }
+        this.baits = [
+            new baits_1.default(world, carrotColor, 1),
+            new baits_1.default(world, stickColor, -1)
+        ];
+    }
+    CNS.prototype.tick = function (dt) {
+        this.baits.forEach(function (b) { return b.tick(dt); });
+    };
+    CNS.prototype.click = function (x, y, button) {
+        var baitNdx = [0, -1, 1];
+        var ndx = baitNdx[button];
+        if (~ndx)
+            this.baits[ndx].add(x, y);
+    };
+    CNS.prototype.clear = function () {
+        this.baits.forEach(function (b) { return b.clear(); });
+    };
+    return CNS;
+}());
+exports.default = CNS;
+
+
+/***/ }),
+
 /***/ "./entities/fish.ts":
 /*!**************************!*\
   !*** ./entities/fish.ts ***!
@@ -11943,7 +11981,7 @@ matter_js_1.Render.run(render);
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 var matter_js_1 = __webpack_require__(/*! matter-js */ "../node_modules/matter-js/build/matter.js");
 var flock_1 = __webpack_require__(/*! ../entities/flock */ "./entities/flock.ts");
-var baits_1 = __webpack_require__(/*! ../entities/baits */ "./entities/baits.ts");
+var carrotNstick_1 = __webpack_require__(/*! ../entities/carrotNstick */ "./entities/carrotNstick.ts");
 var current_1 = __webpack_require__(/*! ../stage/current */ "./stage/current.ts");
 var source_1 = __webpack_require__(/*! ../stage/source */ "./stage/source.ts");
 var well_1 = __webpack_require__(/*! ../stage/well */ "./stage/well.ts");
@@ -11952,20 +11990,20 @@ var wallWidth = 10;
 var TestScene = /** @class */ (function () {
     function TestScene(world, viewWidth, viewHeight) {
         this.world = world;
-        this.baits = null;
+        this.cns = null;
         this.flock = null;
         this.counterFlock = null;
         this.source = null;
         this.well = null;
         this.ball = null;
         this.wall = null;
-        this.baits = [new baits_1.default(world), new baits_1.default(world, 'pink', -1)];
+        this.cns = new carrotNstick_1.default(world);
         this.flock = new flock_1.default({
             world: world,
             number: 50,
             neighbours: 6,
             comfortDistance: 30,
-            baits: this.baits,
+            baits: this.cns.baits,
             radius: 10,
             velocity: 2,
             color: 'green',
@@ -12012,17 +12050,14 @@ var TestScene = /** @class */ (function () {
     TestScene.prototype.clear = function () {
         this.flock.clear();
         this.counterFlock.clear();
-        this.baits.forEach(function (b) { return b.clear(); });
+        this.cns.clear();
         matter_js_1.World.remove(this.world, this.ball);
         matter_js_1.World.remove(this.world, this.wall);
         this.source.clear();
         this.well.clear();
     };
     TestScene.prototype.click = function (x, y, button) {
-        var baitNdx = [0, -1, 1];
-        var ndx = baitNdx[button];
-        if (~ndx)
-            this.baits[ndx].add(x, y);
+        this.cns.click(x, y, button);
     };
     TestScene.prototype.collide = function (bA, bB) {
         current_1.default.collideIndicator(bA) ||
@@ -12030,7 +12065,7 @@ var TestScene = /** @class */ (function () {
             flock_1.default.collideBait(bA, bB);
     };
     TestScene.prototype.tick = function (dt) {
-        this.baits.forEach(function (b) { return b.tick(dt); });
+        this.cns.tick(dt);
         this.flock.tick(dt);
         this.counterFlock.tick(dt);
         this.source.tick(dt);
