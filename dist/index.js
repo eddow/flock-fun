@@ -11503,10 +11503,12 @@ var matter_js_1 = __webpack_require__(/*! matter-js */ "../node_modules/matter-j
 var lifeSpan = 10; //seconds
 var baitRadius = 4;
 var Baits = /** @class */ (function () {
-    function Baits(world, color) {
+    function Baits(world, color, strength) {
         if (color === void 0) { color = 'orange'; }
+        if (strength === void 0) { strength = 1; }
         this.world = world;
         this.color = color;
+        this.strength = strength;
         this.items = new Set();
     }
     Baits.prototype.add = function (x, y) {
@@ -11651,8 +11653,8 @@ var fishPrototype = {
             Object.assign(direction, { x: Math.cos(tangle) * norm, y: Math.sin(tangle) * norm });
         }
         if (bait) {
-            var baitStrength = /*bait.strength **/ hunger * bait.life / baits_1.default.lifeSpan;
-            direction = matter_js_1.Vector.add(matter_js_1.Vector.mult(matter_js_1.Vector.normalise(matter_js_1.Vector.sub(bait.position, this.position)), velMax * (bait.strength || 1) * baitStrength), matter_js_1.Vector.mult(direction, 1 - baitStrength));
+            var baitStrength = hunger * bait.item.life / baits_1.default.lifeSpan;
+            direction = matter_js_1.Vector.add(matter_js_1.Vector.mult(matter_js_1.Vector.normalise(matter_js_1.Vector.sub(bait.item.position, this.position)), velMax * (bait.strength || 1) * baitStrength), matter_js_1.Vector.mult(direction, 1 - baitStrength));
         }
         if (matter_js_1.Vector.magnitudeSquared(direction)) {
             var newAngle = matter_js_1.Vector.angle({ x: 0, y: 0 }, direction);
@@ -11693,6 +11695,22 @@ var __values = (this && this.__values) || function(o) {
     };
     throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
 };
+var __read = (this && this.__read) || function (o, n) {
+    var m = typeof Symbol === "function" && o[Symbol.iterator];
+    if (!m) return o;
+    var i = m.call(o), r, ar = [], e;
+    try {
+        while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
+    }
+    catch (error) { e = { error: error }; }
+    finally {
+        try {
+            if (r && !r.done && (m = i["return"])) m.call(i);
+        }
+        finally { if (e) throw e.error; }
+    }
+    return ar;
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 var matter_js_1 = __webpack_require__(/*! matter-js */ "../node_modules/matter-js/build/matter.js");
 var fish_1 = __webpack_require__(/*! ./fish */ "./entities/fish.ts");
@@ -11710,12 +11728,12 @@ var Flock = /** @class */ (function () {
         matter_js_1.World.remove(this.options.world, Array.from(this.items));
     };
     Flock.prototype.tick = function (dt) {
-        var e_1, _a, e_2, _b, e_3, _c;
+        var e_1, _a, e_2, _b, e_3, _c, e_4, _d;
         var neighbours, cd = this.options.comfortDistance, vradius = this.options.visibility * this.options.visibility;
         cd = cd * cd; // we use squared distance
         try {
-            for (var _d = __values(this.items), _e = _d.next(); !_e.done; _e = _d.next()) {
-                var fish = _e.value;
+            for (var _e = __values(this.items), _f = _e.next(); !_f.done; _f = _e.next()) {
+                var fish = _f.value;
                 neighbours = new Array(this.options.neighbours);
                 neighbours.fill({
                     dist: Infinity,
@@ -11723,8 +11741,8 @@ var Flock = /** @class */ (function () {
                 });
                 try {
                     // find the `nearest` fish
-                    for (var _f = (e_2 = void 0, __values(this.items)), _g = _f.next(); !_g.done; _g = _f.next()) {
-                        var comp = _g.value;
+                    for (var _g = (e_2 = void 0, __values(this.items)), _h = _g.next(); !_h.done; _h = _g.next()) {
+                        var comp = _h.value;
                         if (comp !== fish) {
                             var dist = matter_js_1.Vector.magnitudeSquared(matter_js_1.Vector.sub(comp.position, fish.position));
                             if (dist < vradius) {
@@ -11740,43 +11758,81 @@ var Flock = /** @class */ (function () {
                 catch (e_2_1) { e_2 = { error: e_2_1 }; }
                 finally {
                     try {
-                        if (_g && !_g.done && (_b = _f.return)) _b.call(_f);
+                        if (_h && !_h.done && (_b = _g.return)) _b.call(_g);
                     }
                     finally { if (e_2) throw e_2.error; }
                 }
                 var ndx = neighbours.findIndex(function (n) { return n.dist === Infinity; });
                 if (~ndx)
                     neighbours.splice(ndx);
-                var baitProx = vradius, nearestBait = null;
-                if (this.options.baits) {
+                var baitProx = vradius, nearestBait = null, nbStrength = 0;
+                if (this.options.baits)
                     try {
-                        for (var _h = (e_3 = void 0, __values(this.options.baits.items)), _j = _h.next(); !_j.done; _j = _h.next()) {
-                            var bait = _j.value;
-                            var dist = matter_js_1.Vector.magnitudeSquared(matter_js_1.Vector.sub(bait.position, fish.position));
-                            if (dist < baitProx) {
-                                baitProx = dist;
-                                nearestBait = bait;
+                        for (var _j = (e_3 = void 0, __values(this.options.baits)), _k = _j.next(); !_k.done; _k = _j.next()) {
+                            var baits = _k.value;
+                            try {
+                                for (var _l = (e_4 = void 0, __values(baits.items)), _m = _l.next(); !_m.done; _m = _l.next()) {
+                                    var bait = _m.value;
+                                    var dist = matter_js_1.Vector.magnitudeSquared(matter_js_1.Vector.sub(bait.position, fish.position));
+                                    if (dist < baitProx) {
+                                        baitProx = dist;
+                                        nearestBait = bait;
+                                        nbStrength = baits.strength;
+                                    }
+                                }
+                            }
+                            catch (e_4_1) { e_4 = { error: e_4_1 }; }
+                            finally {
+                                try {
+                                    if (_m && !_m.done && (_d = _l.return)) _d.call(_l);
+                                }
+                                finally { if (e_4) throw e_4.error; }
                             }
                         }
                     }
                     catch (e_3_1) { e_3 = { error: e_3_1 }; }
                     finally {
                         try {
-                            if (_j && !_j.done && (_c = _h.return)) _c.call(_h);
+                            if (_k && !_k.done && (_c = _j.return)) _c.call(_j);
                         }
                         finally { if (e_3) throw e_3.error; }
                     }
-                }
-                fish.turn(neighbours, cd, nearestBait, dt);
+                fish.turn(neighbours, cd, nearestBait ? {
+                    item: nearestBait,
+                    strength: nbStrength
+                } : null, dt);
             }
         }
         catch (e_1_1) { e_1 = { error: e_1_1 }; }
         finally {
             try {
-                if (_e && !_e.done && (_a = _d.return)) _a.call(_d);
+                if (_f && !_f.done && (_a = _e.return)) _a.call(_e);
             }
             finally { if (e_1) throw e_1.error; }
         }
+    };
+    Flock.collideBait = function (bA, bB) {
+        var _a, e_5, _b;
+        if ('Bait' === bA.label)
+            _a = __read([bB, bA], 2), bA = _a[0], bB = _a[1];
+        if ('Fish' === bA.label && 'Bait' === bB.label && bA.flock.baits)
+            try {
+                for (var _c = __values(bA.flock.baits), _d = _c.next(); !_d.done; _d = _c.next()) {
+                    var baits = _d.value;
+                    if (baits.items.has(bB)) {
+                        baits.remove(bB);
+                        return true;
+                    }
+                }
+            }
+            catch (e_5_1) { e_5 = { error: e_5_1 }; }
+            finally {
+                try {
+                    if (_d && !_d.done && (_b = _c.return)) _b.call(_c);
+                }
+                finally { if (e_5) throw e_5.error; }
+            }
+        return false;
     };
     return Flock;
 }());
@@ -11880,30 +11936,15 @@ matter_js_1.Render.run(render);
 /*!************************!*\
   !*** ./scenes/test.ts ***!
   \************************/
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 "use strict";
 
-var __read = (this && this.__read) || function (o, n) {
-    var m = typeof Symbol === "function" && o[Symbol.iterator];
-    if (!m) return o;
-    var i = m.call(o), r, ar = [], e;
-    try {
-        while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
-    }
-    catch (error) { e = { error: error }; }
-    finally {
-        try {
-            if (r && !r.done && (m = i["return"])) m.call(i);
-        }
-        finally { if (e) throw e.error; }
-    }
-    return ar;
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 var matter_js_1 = __webpack_require__(/*! matter-js */ "../node_modules/matter-js/build/matter.js");
 var flock_1 = __webpack_require__(/*! ../entities/flock */ "./entities/flock.ts");
 var baits_1 = __webpack_require__(/*! ../entities/baits */ "./entities/baits.ts");
+var current_1 = __webpack_require__(/*! ../stage/current */ "./stage/current.ts");
 var source_1 = __webpack_require__(/*! ../stage/source */ "./stage/source.ts");
 var well_1 = __webpack_require__(/*! ../stage/well */ "./stage/well.ts");
 var gap = 200;
@@ -11918,7 +11959,7 @@ var TestScene = /** @class */ (function () {
         this.well = null;
         this.ball = null;
         this.wall = null;
-        this.baits = new baits_1.default(world);
+        this.baits = [new baits_1.default(world), new baits_1.default(world, 'pink', -1)];
         this.flock = new flock_1.default({
             world: world,
             number: 50,
@@ -11971,31 +12012,25 @@ var TestScene = /** @class */ (function () {
     TestScene.prototype.clear = function () {
         this.flock.clear();
         this.counterFlock.clear();
-        this.baits.clear();
+        this.baits.forEach(function (b) { return b.clear(); });
         matter_js_1.World.remove(this.world, this.ball);
         matter_js_1.World.remove(this.world, this.wall);
         this.source.clear();
         this.well.clear();
     };
     TestScene.prototype.click = function (x, y, button) {
-        this.baits.add(x, y);
+        var baitNdx = [0, -1, 1];
+        var ndx = baitNdx[button];
+        if (~ndx)
+            this.baits[ndx].add(x, y);
     };
     TestScene.prototype.collide = function (bA, bB) {
-        var _a;
-        if ('Current indicator' === bA.label)
-            bA.current.remove(bA);
-        else if ('Current indicator' === bB.label)
-            bB.current.remove(bB);
-        else {
-            // TODO: only flock eats bait, not counter-flock ?
-            if ('Bait' === bA.label)
-                _a = __read([bB, bA], 2), bA = _a[0], bB = _a[1];
-            if ('Fish' === bA.label && 'Bait' === bB.label)
-                this.baits.remove(bB);
-        }
+        current_1.default.collideIndicator(bA) ||
+            current_1.default.collideIndicator(bB) ||
+            flock_1.default.collideBait(bA, bB);
     };
     TestScene.prototype.tick = function (dt) {
-        this.baits.tick(dt);
+        this.baits.forEach(function (b) { return b.tick(dt); });
         this.flock.tick(dt);
         this.counterFlock.tick(dt);
         this.source.tick(dt);
@@ -12094,6 +12129,12 @@ var Current = /** @class */ (function () {
         }
         if (Math.random() * dt / 1000 < 1)
             this.addIndicator();
+    };
+    Current.collideIndicator = function (body) {
+        var rv = 'Current indicator' === body.label;
+        if (rv)
+            body.current.remove(body);
+        return rv;
     };
     return Current;
 }());

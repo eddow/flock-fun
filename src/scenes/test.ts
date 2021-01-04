@@ -10,7 +10,7 @@ const gap = 200;
 const wallWidth = 10;
 
 export default class TestScene implements Scene {
-	baits: Baits = null
+	baits: Baits[] = null
 	flock: Flock = null
 	counterFlock: Flock = null
 	source: Source = null
@@ -18,7 +18,7 @@ export default class TestScene implements Scene {
 	ball: Body = null
 	wall: Body = null
 	constructor(public world: World, viewWidth: number, viewHeight: number) {
-		this.baits = new Baits(world);
+		this.baits = [new Baits(world), new Baits(world, 'pink', -1)];
 		this.flock = new Flock({
 			world,
 			number: 50,	// nr of fish
@@ -75,29 +75,25 @@ export default class TestScene implements Scene {
 	clear() {
 		this.flock.clear();
 		this.counterFlock.clear();
-		this.baits.clear();
+		this.baits.forEach((b: any)=> b.clear());
 		World.remove(this.world, this.ball);
 		World.remove(this.world, this.wall);
 		this.source.clear();
 		this.well.clear();
 	}
 	click(x: number, y: number, button: number) {
-		this.baits.add(x, y);
+		const baitNdx = [0, -1, 1];
+		let ndx = baitNdx[button];
+		if(~ndx)
+			this.baits[ndx].add(x, y);
 	}
 	collide(bA: any, bB: any) {
-		if('Current indicator'=== bA.label)
-			bA.current.remove(bA);
-		else if('Current indicator'=== bB.label)
-			bB.current.remove(bB);
-		else {
-			// TODO: only flock eats bait, not counter-flock ?
-			if('Bait'=== bA.label) [bA, bB] = [bB, bA];
-			if('Fish'=== bA.label && 'Bait'=== bB.label)
-				this.baits.remove(bB);
-		}
+		Current.collideIndicator(bA) ||
+		Current.collideIndicator(bB) ||
+		Flock.collideBait(bA, bB);
 	}
 	tick(dt: number) {
-		this.baits.tick(dt);
+		this.baits.forEach((b: any)=> b.tick(dt));
 		this.flock.tick(dt);
 		this.counterFlock.tick(dt);
 		this.source.tick(dt);

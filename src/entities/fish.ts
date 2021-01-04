@@ -80,11 +80,11 @@ const fishPrototype = {
 			Object.assign(direction, {x: Math.cos(tangle)*norm, y: Math.sin(tangle)*norm});
 		}
 		if(bait) {
-			let baitStrength = /*bait.strength **/ hunger * bait.life/Baits.lifeSpan;
+			let baitStrength = hunger * bait.item.life/Baits.lifeSpan;
 			direction = Vector.add(
 				Vector.mult(
 					Vector.normalise(
-						Vector.sub(bait.position, this.position)
+						Vector.sub(bait.item.position, this.position)
 					),
 					velMax*(bait.strength||1) * baitStrength
 				), Vector.mult(

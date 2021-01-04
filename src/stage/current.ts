@@ -55,4 +55,9 @@ export default abstract class Current {
 		if(Math.random()*dt/1000 < 1)
 			this.addIndicator();
 	}
+	static collideIndicator(body: any) {
+		let rv = 'Current indicator'=== body.label;
+		if(rv) body.current.remove(body);
+		return rv;
+	}
 }

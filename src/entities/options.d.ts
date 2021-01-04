@@ -12,7 +12,7 @@ export interface FlockOptions {
 	number: number
 	neighbours: number
 	comfortDistance: number
-	baits?: Baits
+	baits?: Baits[]
 	inertia?: number
 	radius: number
 	color: string

@@ -6,7 +6,7 @@ const baitRadius = 4;
 export default class Baits {
 	items: Set<Body>
 	static lifeSpan: number = lifeSpan
-	constructor(public world:any, public color: string = 'orange') {
+	constructor(public world:any, public color: string = 'orange', public strength: number = 1) {
 		this.items = new Set<Body>();
 	}
 	add(x: number, y: number) {

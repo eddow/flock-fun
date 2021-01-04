@@ -4,10 +4,10 @@ import Flock from '../entities/flock'
 import Baits from '../entities/baits'
 
 export default class EmptyScene implements Scene {
-	baits: Baits = null
+	baits: Baits[] = null
 	flock: Flock = null
 	constructor(public world: World, viewWidth: number, viewHeight: number) {
-		this.baits = new Baits(world);
+		this.baits = [new Baits(world), new Baits(world, 'pink', -1)];
 		this.flock = new Flock({
 			world,
 			number: 50,	// nr of fish
@@ -28,18 +28,19 @@ export default class EmptyScene implements Scene {
 	}
 	clear() {
 		this.flock.clear();
-		this.baits.clear();
+		this.baits.forEach((b: any)=> b.clear());
 	}
 	click(x: number, y: number, button: number) {
-		this.baits.add(x, y);
+		const baitNdx = [0, -1, 1];
+		let ndx = baitNdx[button];
+		if(~ndx)
+			this.baits[ndx].add(x, y);
 	}
 	collide(bA: any, bB: any) {
-		if('Bait'=== bA.label) [bA, bB] = [bB, bA];
-		if('Fish'=== bA.label && 'Bait'=== bB.label)
-			this.baits.remove(bB);
+		Flock.collideBait(bA, bB);
 	}
 	tick(dt: number) {
-		this.baits.tick(dt);
+		this.baits.forEach((b: any)=> b.tick(dt));
 		this.flock.tick(dt);
 	}
 };

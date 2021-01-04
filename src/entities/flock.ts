@@ -42,18 +42,35 @@ export default class Flock {
 			}
 			let ndx = neighbours.findIndex(n=> n.dist === Infinity);
 			if(~ndx) neighbours.splice(ndx);
-			let baitProx = vradius, nearestBait = null;
-			if(this.options.baits) {
-				for(let bait of this.options.baits.items) {
-					let dist = Vector.magnitudeSquared(Vector.sub(bait.position, fish.position));
-					if(dist < baitProx) {
-						baitProx = dist;
-						nearestBait = bait;
+			let baitProx = vradius, nearestBait = null, nbStrength = 0;
+			if(this.options.baits)
+				for(let baits of this.options.baits)
+					for(let bait of baits.items) {
+						let dist = Vector.magnitudeSquared(Vector.sub(bait.position, fish.position));
+						if(dist < baitProx) {
+							baitProx = dist;
+							nearestBait = bait;
+							nbStrength = baits.strength;
+						}
 					}
-				}
-			}
-			fish.turn(neighbours, cd, nearestBait, dt);
+			fish.turn(
+				neighbours, cd,
+				nearestBait?{
+					item: nearestBait,
+					strength: nbStrength
+				} : null,
+				dt);
 		}
+	}
+	static collideBait(bA: any, bB: any) {
+		if('Bait'=== bA.label) [bA, bB] = [bB, bA];
+		if('Fish'=== bA.label && 'Bait'=== bB.label && bA.flock.baits)
+			for(let baits of bA.flock.baits)
+				if(baits.items.has(bB)) {
+					baits.remove(bB);
+					return true;
+				}
+		return false;
 	}
 }
 
